@@ -322,14 +322,15 @@ class Demx2(object):
                     fq_count = 1
                 i7_fn_df.update({name:fq_count})
             if i7_seq not in self.i7_with_bc:
-                log.info('check file: {} {}'.format(name, fq_count))
+                if not suffix.startswith('_2'): # skip read2
+                    log.info('check file: {} {}'.format(name, fq_count))
         # update read_count.json
         Config().dump(i7_fn_df, i7_fn)
 
 
     def demx_bc(self, x):
         """
-        Paramters:
+        Parameters:
         ----------
         x : str
             barcode index table
