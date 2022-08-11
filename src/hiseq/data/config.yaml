@@ -1,0 +1,17 @@
+aligner:
+- bowtie
+- bowtie2
+- bwa
+- STAR
+- hisat2
+- salmon
+genome:
+- dm3
+- dm6
+- dm6_te_piRC
+- mm10
+- mmul_10
+- hg19
+- hg38
+- GRCh38
+- susScr11

@@ -1,0 +1,21 @@
+# Compiled python modules
+*.pyc
+dist/
+build/
+.ipynb_checkpoints/
+*.ipynb 
+
+# Setuptools distribution folder
+/dist/
+
+# Python egg metadata
+/*.egg-info
+/*.egg
+
+# docs
+docs/build/
+test/results/
+test/
+
+# temp files
+tmp.*

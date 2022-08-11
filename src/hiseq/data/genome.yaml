@@ -1,0 +1,120 @@
+dm3:
+  bed:
+    ensembl: /data/yulab/wangming/data/genome/dm3/annotation_and_repeats/dm3.ensembl.bed
+    gencode: null
+    refseq: /data/yulab/wangming/data/genome/dm3/annotation_and_repeats/dm3.refseq.bed
+  blacklist: /data/yulab/wangming/data/genome/dm3/annotation_and_repeats/blacklist/dm3-blacklist.v2.bed
+  fai: /data/yulab/wangming/data/genome/dm3/bigZips/dm3.chrom.sizes
+  fasta: /data/yulab/wangming/data/genome/dm3/bigZips/dm3.fa
+  gtf:
+    ensembl: /data/yulab/wangming/data/genome/dm3/annotation_and_repeats/dm3.ensembl.gtf
+    gencode: null
+    refseq: /data/yulab/wangming/data/genome/dm3/annotation_and_repeats/dm3.refseq.gtf
+  phylop100: null
+  piRC: /data/yulab/wangming/data/genome/dm3/dm3_piRNA_clusters/dm3_piRNA_clusters.gtf
+  te: null
+dm6:
+  bed:
+    ensembl: /data/yulab/wangming/data/genome/dm6/annotation_and_repeats/dm6.ensembl.bed
+    gencode: null
+    refseq: /data/yulab/wangming/data/genome/dm6/annotation_and_repeats/dm6.refseq.bed
+  blacklist: /data/yulab/wangming/data/genome/dm6/annotation_and_repeats/blacklist/dm6-blacklist.v2.bed
+  fai: /data/yulab/wangming/data/genome/dm6/bigZips/dm6.chrom.sizes
+  fasta: /data/yulab/wangming/data/genome/dm6/bigZips/dm6.fa
+  gtf:
+    ensembl: /data/yulab/wangming/data/genome/dm6/annotation_and_repeats/dm6.ensembl.gtf
+    gencode: null
+    refseq: /data/yulab/wangming/data/genome/dm6/annotation_and_repeats/dm6.refseq.gtf
+  phylop100: null
+  piRC: /data/yulab/wangming/data/genome/dm6/dm6_piRNA_clusters/dm6_piRNA_clusters.gtf
+  te: /data/yulab/wangming/data/genome/dm6/dm6_transposon/dm6_transposon.gtf
+dm6_te_piRC:
+  bed:
+    ensembl: /data/yulab/wangming/data/genome/dm6_te_piRC/annotation_and_repeats/dm6_te_piRC.ensembl.bed
+    gencode: null
+    refseq: null
+  blacklist: null
+  fai: /data/yulab/wangming/data/genome/dm6_te_piRC/bigZips/dm6_te_piRC.fa.fai
+  fasta: /data/yulab/wangming/data/genome/dm6_te_piRC/bigZips/dm6_te_piRC.fa
+  gtf:
+    ensembl: /data/yulab/wangming/data/genome/dm6_te_piRC/annotation_and_repeats/dm6_te_piRC.ensembl.gtf
+    gencode: null
+    refseq: null
+  phylop100: null
+  piRC: null
+  te: null
+hg19:
+  bed:
+    ensembl: /data/yulab/wangming/data/genome/hg19/annotation_and_repeats/hg19.ensembl.bed
+    gencode: null
+    refseq: /data/yulab/wangming/data/genome/hg19/annotation_and_repeats/hg19.refseq.bed
+  blacklist: /data/yulab/wangming/data/genome/hg19/annotation_and_repeats/blacklist/hg19-blacklist.v2.bed
+  fai: /data/yulab/wangming/data/genome/hg19/bigZips/hg19.chrom.sizes
+  fasta: /data/yulab/wangming/data/genome/hg19/bigZips/hg19.fa
+  gtf:
+    ensembl: /data/yulab/wangming/data/genome/hg19/annotation_and_repeats/hg19.ensembl.gtf
+    gencode: null
+    refseq: /data/yulab/wangming/data/genome/hg19/annotation_and_repeats/hg19.refseq.gtf
+  phylop100: /data/yulab/wangming/data/genome/hg19/phyloP100way/hg19.100way.phyloP100way.bw
+  piRC: null
+  te: null
+hg38:
+  bed:
+    ensembl: /data/yulab/wangming/data/genome/hg38/annotation_and_repeats/hg38.ensembl.bed
+    gencode: null
+    refseq: /data/yulab/wangming/data/genome/hg38/annotation_and_repeats/hg38.refseq.bed
+  blacklist: /data/yulab/wangming/data/genome/hg38/annotation_and_repeats/blacklist/hg38-blacklist.v2.bed
+  fai: /data/yulab/wangming/data/genome/hg38/bigZips/hg38.chrom.sizes
+  fasta: /data/yulab/wangming/data/genome/hg38/bigZips/hg38.fa
+  gtf:
+    ensembl: /data/yulab/wangming/data/genome/hg38/annotation_and_repeats/hg38.ensembl.gtf
+    gencode: /data/yulab/wangming/data/genome/hg38/annotation_and_repeats/hg38.gencode.gtf
+    refseq: /data/yulab/wangming/data/genome/hg38/annotation_and_repeats/hg38.refseq.gtf
+  phylop100: null
+  piRC: null
+  te: null
+mm10:
+  bed:
+    ensembl: /data/yulab/wangming/data/genome/mm10/annotation_and_repeats/mm10.ensembl.bed
+    gencode: null
+    refseq: /data/yulab/wangming/data/genome/mm10/annotation_and_repeats/mm10.refseq.bed
+  blacklist: /data/yulab/wangming/data/genome/mm10/annotation_and_repeats/blacklist/mm10-blacklist.v2.bed
+  fai: /data/yulab/wangming/data/genome/mm10/bigZips/mm10.chrom.sizes
+  fasta: /data/yulab/wangming/data/genome/mm10/bigZips/mm10.fa
+  gtf:
+    ensembl: /data/yulab/wangming/data/genome/mm10/annotation_and_repeats/mm10.ensembl.gtf
+    gencode: null
+    refseq: /data/yulab/wangming/data/genome/mm10/annotation_and_repeats/mm10.refseq.gtf
+  phylop100: null
+  piRC: null
+  te: null
+mmul_10:
+  bed:
+    ensembl: /data/yulab/wangming/data/genome/mmul_10/annotation_and_repeats/mmul_10.ensembl.bed
+    gencode: null
+    refseq: null
+  blacklist: null
+  fai: /data/yulab/wangming/data/genome/mmul_10/bigZips/mmul_10.chrom.sizes
+  fasta: /data/yulab/wangming/data/genome/mmul_10/bigZips/mmul_10.fa
+  gtf:
+    ensembl: /data/yulab/wangming/data/genome/mmul_10/annotation_and_repeats/mmul_10.ensembl.gtf
+    gencode: null
+    refseq: null
+  phylop100: null
+  piRC: null
+  te: null
+susScr11:
+  bed:
+    ensembl: /data/yulab/wangming/data/genome/susScr11/annotation_and_repeats/susScr11.ensembl.bed
+    gencode: null
+    refseq: null
+  blacklist: null
+  fai: /data/yulab/wangming/data/genome/susScr11/bigZips/susScr11.chrom.sizes
+  fasta: /data/yulab/wangming/data/genome/susScr11/bigZips/susScr11.fa
+  gtf:
+    ensembl: /data/yulab/wangming/data/genome/susScr11/annotation_and_repeats/susScr11.ensembl.gtf
+    gencode: null
+    refseq: null
+  phylop100: null
+  piRC: null
+  te: null
