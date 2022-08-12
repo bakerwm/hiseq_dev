@@ -32,6 +32,9 @@ from hiseq.demx.demx2 import get_args as add_demx2_args
 from hiseq.trim.trim import Trim
 from hiseq.trim.trim import get_args as add_trim_args
 
+from hiseq.sample.sample import Sample
+from hiseq.sample.sample import get_args as add_sample_args
+
 
 # from hiseq.qc.fastqc import Fastqc
 # from hiseq.qc.fastqc import get_args as add_fastqc_args
@@ -175,13 +178,10 @@ class Hiseq(object):
         Trim(**args).run()
 
 
-#     def sample(self):
-#         """
-#         Sub-sample fastq files
-#         head
-#         """
-#         args = self.init_args(add_sample_args())
-#         FxSample(**args).run()
+    def sample(self):
+        args = self.init_args(add_sample_args())
+        Sample(**args).run()
+        
 
 
 

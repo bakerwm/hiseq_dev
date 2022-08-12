@@ -96,7 +96,7 @@ def get_args():
         help='Number of records, default: 1000')
     parser.add_argument('-r', '--random', action='store_true',
         help='Get random subset records'),
-    parser.add_argument('-w', '--overwrite', action='store_true',
+    parser.add_argument('-O', '--overwrite', action='store_true',
         help='Overwrite the exists files')
     parser.add_argument('-j', '--parallel-jobs', dest='parallel_jobs',
         default=1, type=int,
