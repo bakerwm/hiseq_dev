@@ -17,7 +17,7 @@ import argparse
 from hiseq.utils.utils import log
 
 ## functions
-from hiseq.download.download import download
+from hiseq.download.download import Download
 from hiseq.download.download import get_args as add_download_args
 
 from hiseq.demx.sample_sheet import SampleSheet
@@ -152,15 +152,10 @@ class Hiseq(object):
 ## sub-modules
     def download(self):
         args = self.init_args(add_download_args())
-        download(**args)
+        Download(**args).run()
 
 
     def sheet(self):
-        """
-        Prepare the sample sheet for demx
-        1. sample_name,i7,i5,barcode (Demx, whole-lane)
-        2. i7_name,i7,reads (Demx2, part)
-        """
         args = self.init_args(add_sheet_args())
         SampleSheet(**args).run()
 
@@ -178,6 +173,16 @@ class Hiseq(object):
     def trim(self):
         args = self.init_args(add_trim_args())
         Trim(**args).run()
+
+
+#     def sample(self):
+#         """
+#         Sub-sample fastq files
+#         head
+#         """
+#         args = self.init_args(add_sample_args())
+#         FxSample(**args).run()
+
 
 
 
