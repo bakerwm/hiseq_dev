@@ -21,6 +21,8 @@ import glob
 import importlib.resources as res
 from hiseq.utils.utils import log, update_obj, Config #, run_shell_cmd
 # from hiseq.utils.file import file_exists, check_dir
+from hiseq.utils.seq import list_fx, fx_name, check_fx_paired
+from hiseq.utils.file import list_dir, file_exists
 
 
 ## functions for hiseq-global
@@ -339,8 +341,122 @@ class HiSeqReader(object):
 
 
 class HiSeqDesignAtac(object):
-    def __init__(self):
-        pass
+    def __init__(self, **kwargs):
+        self = update_obj(self, kwargs, force=True)
 
 
+    def init_args(self):
+        args_init = {
+            'design': None,
+            'fq_dir': None,
+            'fq1': None,
+            'fq2': None,
+            'append': True,
+        }
+        self = update_obj(self, args_init, force=False)
+        self.hiseq_type = 'atac_rd'
+        self.build_design = False # force
 
+
+    def list_fq_files(self, x):
+        if isinstance(x, str):
+            f_list = list_fx(x)
+        if len(f_list) < 2:
+            sub_dirs = list_dir(x, include_dirs=True)
+            sub_files = [list_fx(i) for i in sub_dirs if os.path.isdir(i)]
+            f_list = [f for i in sub_files if isinstance(i, list) for f in i]
+        if len(f_list) < 2:
+            log.error('not enough fq files: {}'.format(x))
+            return None
+        return f_list
+
+    
+    def parse_fq(self):
+        if isinstance(self.fq_dir, str):
+            f_list = self.list_fq_files(self.fq_dir)
+        elif isinstance(self.fq1, list) and isinstance(self.fq2, list):
+            f_list = self.fq1 + self.fq2
+        elif isinstance(self.fq1, str) and isinstance(self.fq2, str):
+            f_list = [self.fq1, self.fq2]
+        else:
+            f_list = []
+        if len(f_list) < 2: # paired
+            log.error('no fq files found, check -r, -1, -2')
+            return None
+            # raise ValueError('fq_dir, fq1,fq2, failed')
+        # separate fq1, fq2
+        fq1 = [i for i in f_list if fx_name(i).endswith('1')]
+        fq2 = [i for i in f_list if fx_name(i).endswith('2')]
+        if not check_fx_paired(fq1, fq2):
+            log.error('fq not paired, check -r, -1, -2')
+            return None
+        # recognize samples by name: filename_repx.fq.gz
+        d = {}
+        f_names = fx_name(f_list, fix_pe=True, fix_rep=True, fix_unmap=True)
+        f_names = sorted(list(set(f_names)))
+        for f in f_names:
+            df = d.get(f, {})
+            for i,j in zip(fq1, fq2):
+                iname1 = fx_name(i, fix_pe=True, fix_rep=True, fix_unmap=True)
+                if iname1 == f:
+                    iname2 = fx_name(i, fix_pe=True, fix_rep=False, fix_unmap=True)
+                    df.update({
+                        iname2: [i, j]
+                    })
+            # update
+            d.update({f: df})
+        return d
+
+
+    def update_design(self):
+        # load design/fq_groups
+        if file_exists(self.design) and self.append:
+            d = Config().load(self.design)
+        else:
+            d = {}
+        # new fq_groups
+        d.update(self.parse_fq())
+        return d
+
+
+    def show_msg(self):
+        msg = ['='*80]
+        n_fq = 0
+        for k,v in self.fq_groups.items():
+            # smp_name, ...
+            msg.append('>{}'.format(k))
+            for i,j in v.items():
+                n_fq += 1
+                # rep1, ...
+                msg.append(
+                    '\n'.join([
+                        '{} {}'.format(' '*2, i),
+                        '{} r1: {}'.format(' '*4, j[0]),
+                        '{} r2: {}'.format(' '*4, j[1]),
+                    ])
+                )
+        msg.append('\n'.join([
+            '{:>8}: {}'.format('samples', len(self.fq_groups)),
+            '{:>8}: {}'.format('fq pairs', n_fq)
+        ]))
+        msg.append('='*80)
+        out = '\n'.join(msg)
+        print(out)
+
+
+    def run(self):
+        self.fq_groups = self.parse_fq()
+        self.show_msg()
+        Config().dump(self.fq_groups, self.design)
+
+
+# def main():
+#     args = {
+#         'design': 'aaa.yaml',
+#         'fq_dir': '/data/yulab/wangming/work/wmlib/hiseq_dev/test/data',
+#     }
+#     HiSeqDesignAtac(**args).run()
+
+
+# if __name__ == '__main__':
+#     main()
