@@ -18,10 +18,10 @@ from hiseq.utils.file import check_dir, symlink_file, file_abspath, fix_out_dir
 from hiseq.utils.seq import check_fx_paired, fx_name
 from hiseq.atac.atac_args import get_args_atac_rn
 from hiseq.atac.atac_files import get_atac_dirs, get_atac_files
-from hiseq.atac.utils import hiseq_call_peak, hiseq_bam2bw, hiseq_copy_r1
+from hiseq.atac.utils import hiseq_call_peak, hiseq_bam2bw, hiseq_copy_r1, hiseq_merge_bam, hiseq_pcr_dup
 from hiseq.atac.atac_qc import (
-    qc_trim_summary, qc_align_summary, hiseq_merge_bam, qc_lendist, qc_frip, 
-    qc_tss_enrich, qc_genebody_enrich, hiseq_pcr_dup, qc_bam_cor, qc_peak_idr, 
+    qc_trim_summary, qc_align_summary, qc_lendist, qc_frip, 
+    qc_tss_enrich, qc_genebody_enrich, qc_bam_cor, qc_peak_idr, 
     qc_peak_overlap, qc_bam_fingerprint
 )
 from hiseq.atac.atac_r1 import AtacR1

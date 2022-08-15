@@ -20,11 +20,11 @@ from hiseq.atac.atac_args import get_args_atac_r1 #, get_args_index1, get_args_a
 from hiseq.atac.atac_files import get_atac_dirs, get_atac_files
 from hiseq.atac.utils import (
     hiseq_trim, hiseq_align_genome, hiseq_align_spikein, hiseq_call_peak, 
-    hiseq_bam2bw
+    hiseq_bam2bw, hiseq_pcr_dup
 )
 from hiseq.atac.atac_qc import (
     qc_trim_summary, qc_align_summary, qc_lendist, qc_frip,
-    qc_tss_enrich, qc_genebody_enrich, hiseq_pcr_dup
+    qc_tss_enrich, qc_genebody_enrich
 )
 from hiseq.report.hiseq_report import HiSeqRpt
 
