@@ -74,7 +74,7 @@ def get_args_index2(parser):
     parser.add_argument('-k', '--spikein', default=None,
         help='Spike-in genome : dm3, hg19, hg38, mm10, default: None')
     parser.add_argument('--spikein-index', dest="spikein_index", default=None,
-        help='align index of spikein')    
+        help='align index of spikein')
     parser.add_argument('--to-rRNA', dest='to_rRNA', action='store_true',
         help='Align to rRNA')
     parser.add_argument('--rRNA-index', dest="rRNA_index", default=None,

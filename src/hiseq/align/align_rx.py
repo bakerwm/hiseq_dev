@@ -18,6 +18,7 @@ AlignR1()
 import os
 import pathlib
 import argparse
+from multiprocessing import Pool
 from hiseq.utils.utils import update_obj, Config
 from hiseq.utils.seq import Fastx, fx_name, check_fx_paired, check_fx_args
 from hiseq.utils.file import file_abspath, check_dir, list_dir, symlink_file
@@ -92,14 +93,6 @@ class AlignRx(object):
             'is_paired': self.is_paired,
             })
         AlignRn(**args).run()
-
-
-    def run(self):
-        if len(self.fq1) > 1 and self.parallel_jobs > 1:
-            with Pool(processes=self.parallel_jobs) as pool:
-                pool.map(self.run_r1, self.fq1)
-        else:
-            [self.run_r1(fq) for fq in self.fq1]
 
 
     def run(self):

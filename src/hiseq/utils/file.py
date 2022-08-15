@@ -28,14 +28,15 @@ functions for file manipulation
 import os
 #  import sys
 # import re
-# import pathlib
+import pathlib
 import shutil
 # import logging
 import fnmatch
 import binascii
 # import subprocess
 # import pyfastx
-# import pysam
+import pysam
+import pyBigWig
 from xopen import xopen
 # from hiseq.utils.seq import Fastx
 from hiseq.utils.utils import log
@@ -454,6 +455,18 @@ def read_file(x, nrows=0, skip=0, strip_white=True, comment=''):
     return out
 
 
+def fix_out_dir(x):
+    """
+    fix out_dir, if not "str", set "cwd()"
+    """
+    if not isinstance(x, str):
+        x = pathlib.Path.cwd()
+    x = os.path.abspath(x)
+    if not os.path.exists(x):
+        os.makedirs(x)
+    return x
+
+
 ## 2. file info
 def file_is_gzipped(x):
     """
@@ -631,4 +644,77 @@ def list_file(path='.', pattern='*', full_names=True, recursive=False,
     files = list_dir(path, full_names, recursive, include_dirs)
     files = [f for f in files if fnmatch.fnmatch(os.path.basename(f), pattern)]
     return sorted(files)
+
+
+## 4. valid files
+
+def is_valid_file(x, fun):
+    """
+    Check if x is valid file: BAM|bigWig|BED
+
+    Parameters
+    ----------
+    x : str
+        Path to the file
+    
+    fun : function
+        The function, is_valid_bam, is_valid_bigwig, is_valid_bed
+    """
+    if isinstance(x, str):
+        out = fun(x)
+    elif isinstance(x, list):
+        out = all(list(map(fun, x)))
+    else:
+        out = False
+    return out
+
+
+def is_valid_bam(x):
+    """
+    Check if x is valid BAM file
+
+    Parameters
+    ----------
+    x : str
+        Path to the BAM file
+    """
+    out = False
+    if isinstance(x, str):
+        if os.path.exists(x):
+            try:
+                s = pysam.AlignmentFile(x)
+                out = True
+            except ValueError as err:
+                out = False
+    return out
+
+
+def is_valid_bigwig(x):
+    """
+    Check if x is bigWig file
+    retrieve by keywords
+    bw files:
+    """
+    try:
+        with pyBigWig.open(x) as bw:
+            out = bw.isBigWig()
+    except RuntimeError as err:
+        out = False
+        log.error(err)
+    return out
+
+
+def is_valid_bed(x):
+    """
+    Check if x is valid BED file
+    file name: .bed, exists
+    """
+    out = False
+    if isinstance(x, str):
+        out1 = os.path.exists(x)
+        x_ext = os.path.splitext(x)[1]
+        out2 = x_ext.lower() in ['.bed', '.bed6', '.bed12', '.narrowpeak']
+        out = out1 and out2
+    return out
+
 

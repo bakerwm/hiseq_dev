@@ -243,7 +243,8 @@ def read_hiseq(x, hiseq_type='auto'):
         pass # reduce messagage #
     return a
 
-class HiseqReader(object):
+
+class HiSeqReader(object):
     """
     Parameters
     ---------
@@ -335,4 +336,11 @@ class HiseqReader(object):
         else:
             out = None
         return out
+
+
+class HiSeqDesignAtac(object):
+    def __init__(self):
+        pass
+
+
 
