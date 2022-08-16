@@ -7,26 +7,21 @@ General modules for ATACseq analysis
 analysis-module:
 """
 
-import sys
 import os
+# import sys
 import re
-import glob
-import shutil
+# import glob
+# import shutil
 import pysam
 from hiseq.trim.trim_r1 import TrimR1
 from hiseq.align.align import Align
 from hiseq.bam2bw.bam2bw import Bam2bw
 from hiseq.callpeak.callpeak import CallPeak
-# from hiseq.atac.callpeak import CallPeak
 from hiseq.utils.bam import Bam
 from hiseq.utils.file import check_file, symlink_file, file_exists, list_dir
 from hiseq.utils.utils import log, Config, run_shell_cmd
 from hiseq.utils.hiseq_utils import read_hiseq, list_hiseq_file, is_hiseq_dir
 from hiseq.align.align_index import check_index_args
-# from hiseq.utils.seq import fx_name
-# from hiseq.utils.tmp import Bam2cor, Bam2fingerprint,  PeakIDR, BedOverlap, PeakFRiP
-# from hiseq.fragsize.fragsize import BamFragSize, BamFragSizeR1
-# from hiseq.utils.bed import
 
 
 """
@@ -38,7 +33,7 @@ Main:
 5. bam to bw (optional)
 6. qc
 """
-def hiseq_trim(x, hiseq_type='r1'):
+def hiseq_trim(x, hiseq_type='_r1'):
     """
     Parameters
     ----------
@@ -386,7 +381,7 @@ def hiseq_norm_scale(x, hiseq_type='_r1', by_spikein=False, norm=1000000):
             'map': n,
             'scale': s
         }
-        Config().dump(d, a.align_scale_json)
+        Config().dump(out, a.align_scale_json)
     return out
 
 
@@ -434,7 +429,7 @@ def get_mito_count(x):
     return n_mt
 
 
-def hiseq_call_peak(x, hiseq_type='r1'):
+def hiseq_call_peak(x, hiseq_type='_r1'):
     """
     Call peaks using MACS2 and SEACR
     -f BAMPE
@@ -490,7 +485,7 @@ def hiseq_bam2bw(x, hiseq_type='_r1'):
     Bam2bw(**args).run()
 
 
-def hiseq_bw_compare(x, hiseq_type='rx'):
+def hiseq_bw_compare(x, hiseq_type='_rx'):
     """
     Create bw, ip over input
     bwCompare()

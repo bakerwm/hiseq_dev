@@ -10,7 +10,7 @@ BAM:
   - sort
   - index
   - count
-  - rmdup
+  - rm_dup
   - proper_pair
   - subset
   - frag_size *
@@ -41,7 +41,7 @@ class Bam(object):
     - merge
     - count
     - to_bed
-    - rmdup
+    - rm_dup
     - ...
     Using Pysam,...
     code from cgat:
@@ -101,15 +101,15 @@ class Bam(object):
         return outfile
 
 
-    def rmdup(self, outfile=None, overwrite=False, tools='picard'):
+    def rm_dup(self, outfile=None, overwrite=False, tools='picard'):
         """
         Remove duplicates using picard/sambamba
-        sambamba markdup -r --overflow-list-size 800000 raw.bam rmdup.bam
+        sambamba markdup -r --overflow-list-size 800000 raw.bam rm_dup.bam
         picard MarkDuplicates -REMOVE_DUPLICATES True -I in.bam -O outfile.bam -M metrix.txt
         ## -REMOVE_SEQUENCING_DUPLICATES True
         """
         if outfile is None:
-            outfile = os.path.splitext(self.bam)[0] + '.rmdup.bam'
+            outfile = os.path.splitext(self.bam)[0] + '.rm_dup.bam'
         if tools == 'sambamba':
             sambamba = which('sambamba')
             log_stderr = outfile + '.sambamba.log'
@@ -134,7 +134,7 @@ class Bam(object):
             # 'REMOVE_SEQUENCING_DUPLICATES=True',
         else:
             log.error(' '.join([
-                'rmdup(), unknown tools {}, '.format(tools),
+                'rm_dup(), unknown tools {}, '.format(tools),
                 'options: ["sambamba", "picard"]'
             ]))
             return None

@@ -18,7 +18,7 @@ from hiseq.utils.file import check_dir, symlink_file, file_abspath, fix_out_dir
 from hiseq.utils.seq import check_fx_paired, fx_name
 from hiseq.atac.atac_args import get_args_atac_r1 #, get_args_index1, get_args_atac1
 from hiseq.atac.atac_files import get_atac_dirs, get_atac_files
-from hiseq.atac.utils import (
+from hiseq.atac.atac_utils import (
     hiseq_trim, hiseq_align_genome, hiseq_align_spikein, hiseq_call_peak, 
     hiseq_bam2bw, hiseq_pcr_dup
 )
@@ -46,9 +46,10 @@ class AtacR1(object):
         hiseq_trim(self.project_dir, '_r1')
         hiseq_align_genome(self.project_dir, '_r1')
         hiseq_pcr_dup(self.project_dir, '_r1')
-        # sys.exit(1)
+        # # sys.exit(1)
         hiseq_call_peak(self.project_dir, '_r1')
-        # hiseq_bam2bw(self.project_dir, '_r1') # optional 
+        if not self.fast_mode:
+            hiseq_bam2bw(self.project_dir, '_r1') # optional 
         if isinstance(self.spikein_index, str):
             hiseq_align_spikein(self.project_dir, '_r1')
         # 3. qc
@@ -56,8 +57,9 @@ class AtacR1(object):
         qc_align_summary(self.project_dir, '_r1')
         qc_lendist(self.project_dir, '_r1')
         qc_frip(self.project_dir, '_r1')
-        # qc_tss_enrich(self.project_dir, '_r1')
-        # qc_genebody_enrich(self.project_dir, '_r1')
+        if not self.fast_mode:
+            qc_tss_enrich(self.project_dir, '_r1')
+            qc_genebody_enrich(self.project_dir, '_r1')
         # 4. report
         HiSeqRpt(self.project_dir, overwrite=self.overwrite).run()
 
@@ -94,7 +96,8 @@ class AtacR1Config(object):
             'trimmed': False,
             'cut': False,
             'cut_to_length': 0,
-            'recursive': False
+            'recursive': False,
+            'fast_mode': False,
         }
         self = update_obj(self, args_init, force=False)
         self.hiseq_type = 'atac_r1'
@@ -104,7 +107,7 @@ class AtacR1Config(object):
             self.out_dir = str(pathlib.Path.cwd())
         self.out_dir = file_abspath(self.out_dir)
         if self.gene_bed is None:
-            self.gene_bed = Genome(self.genome).gene_bed('ensembl')
+            self.gene_bed = Genome(self.genome).bed
         if self.cut:
             self.cut_to_length = 50
             self.recursive = True
@@ -127,8 +130,8 @@ class AtacR1Config(object):
         self.fq1 = file_abspath(self.fq1)
         self.fq2 = file_abspath(self.fq2)
         self.is_paired = True # force PE reads
-        if not isinstance(self.smp_name, str):
-            self.smp_name = fx_name(self.fq1, fix_pe=True, fix_unmap=True)
+        # if not isinstance(self.smp_name, str):
+        self.smp_name = fx_name(self.fq1, fix_pe=True, fix_unmap=True)
         self.rep_list = os.path.join(self.out_dir, self.smp_name)
 
   
@@ -140,18 +143,20 @@ class AtacR1Config(object):
         if isinstance(self.extra_index, str):
             self.genome_size_file = AlignIndex(self.extra_index).index_size(out_file=True)
         elif isinstance(self.genome, str):
-            self.genome_size_file = Genome(self.genome).fasize()
+            self.genome_size_file = Genome(self.genome).fai
         else:
             raise ValueError('--genome or --extra-index; required')
 
 
     def init_files(self, create_dirs=True):
         self.project_name = self.smp_name
+        self.project_dir = os.path.join(self.out_dir, self.smp_name)
         atac_dirs = get_atac_dirs(self.out_dir, self.smp_name)
         atac_files = get_atac_files(self.out_dir, self.smp_name, self.fq1, self.fq2)
         self = update_obj(self, atac_dirs, force=True)
         self = update_obj(self, atac_files, force=True)
-        map(check_dir, atac_dirs)
+        # map(check_dir, atac_dirs.values())
+        [check_dir(i) for i in atac_dirs.values()]
 
 
 def get_args():

@@ -10,17 +10,11 @@ analysis-module:
 """
 
 import os
-import pathlib
-import argparse
+# import pathlib
+# import argparse
 from multiprocessing import Pool
-# from .atac_rn import AtacRn
-# from .atac_rp import AtacRp
-# from hiseq.atac.atac_rn import AtacRn
-# from hiseq.atac.atac_rp import AtacRp
 from hiseq.utils.genome import Genome
-from hiseq.utils.file import (
-    check_dir, file_abspath, file_exists, fix_out_dir
-)
+from hiseq.utils.file import check_dir, file_abspath, file_exists, fix_out_dir
 from hiseq.utils.utils import log, update_obj, Config, get_date, init_cpu
 from hiseq.atac.atac_rn import AtacRn
 from hiseq.report.hiseq_report import HiSeqRpt
@@ -40,6 +34,7 @@ class AtacRx(object):
         args.update({
             'build_design': False,
             'design': None,
+            'fq_groups': None,
             'fq1': [v[0] for k,v in dx.items()],
             'fq2': [v[1] for k,v in dx.items()],
         })
@@ -58,7 +53,7 @@ class AtacRx(object):
 
     def run(self):
         # 1. run AtacRn->AtacR1
-        self.run_multi_group()
+        self.run_group_rx()
         # 2. report
         HiSeqRpt(self.project_dir, overwrite=self.overwrite).run()
 
@@ -79,7 +74,6 @@ class AtacRxConfig(object):
         self.out_dir = fix_out_dir(self.out_dir)
         if not file_exists(self.design):
             raise ValueError('file not exists, --design {}'.format(self.design))
-        self.init_cut()
         self.init_files()
         self.init_fx()
 

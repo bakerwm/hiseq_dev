@@ -20,7 +20,6 @@ import shutil
 import glob
 import importlib.resources as res
 from hiseq.utils.utils import log, update_obj, Config #, run_shell_cmd
-# from hiseq.utils.file import file_exists, check_dir
 from hiseq.utils.seq import list_fx, fx_name, check_fx_paired
 from hiseq.utils.file import list_dir, file_exists
 
@@ -155,7 +154,7 @@ def list_hiseq_dir(x, hiseq_type='auto'):
         Directory of the hiseq project
     hiseq_type:  str
         Type of the hiseq, ['r1', 'rn', 'rx', 'rt', 'rp']
-        see: HiseqReader() for details; default: ['auto'],
+        see: HiSeqReader() for details; default: ['auto'],
     """
     a = read_hiseq(x)
     out = []
@@ -173,7 +172,7 @@ def list_hiseq_dir(x, hiseq_type='auto'):
                 out += r1 # add r1
         elif a.hiseq_type.endswith('rx'): 
             if a.hiseq_type.startswith('atac_'):
-                out = list_dir(x, include_dir=True)
+                out = list_dir(x, include_dirs=True)
                 # out = [i for i in out if is_hiseq_dir(i)]
             else:
                 # for rn dirs
@@ -221,7 +220,7 @@ def read_hiseq(x, hiseq_type='auto'):
         default: [True], do
     Read config from hiseq directory
     """
-    a = HiseqReader(x)
+    a = HiSeqReader(x)
     if hasattr(a, 'hiseq_type'):
         a_hiseq_type = a.hiseq_type
         k = False
@@ -421,10 +420,13 @@ class HiSeqDesignAtac(object):
 
     def show_msg(self):
         msg = ['='*80]
+        n0 = 0
+        n1 = len(self.fq_groups)
         n_fq = 0
         for k,v in self.fq_groups.items():
             # smp_name, ...
-            msg.append('>{}'.format(k))
+            n0 += 1
+            msg.append('[{}/{}] {}'.format(n0, n1, k))
             for i,j in v.items():
                 n_fq += 1
                 # rep1, ...

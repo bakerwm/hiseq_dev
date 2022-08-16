@@ -16,9 +16,12 @@ from multiprocessing import Pool
 from hiseq.utils.utils import log, update_obj, Config, init_cpu
 from hiseq.utils.file import check_dir, symlink_file, file_abspath, fix_out_dir
 from hiseq.utils.seq import check_fx_paired, fx_name
+from hiseq.utils.hiseq_utils import list_hiseq_file
 from hiseq.atac.atac_args import get_args_atac_rn
 from hiseq.atac.atac_files import get_atac_dirs, get_atac_files
-from hiseq.atac.utils import hiseq_call_peak, hiseq_bam2bw, hiseq_copy_r1, hiseq_merge_bam, hiseq_pcr_dup
+from hiseq.atac.atac_utils import (
+    hiseq_call_peak, hiseq_bam2bw, hiseq_copy_r1, hiseq_merge_bam, hiseq_pcr_dup
+)
 from hiseq.atac.atac_qc import (
     qc_trim_summary, qc_align_summary, qc_lendist, qc_frip, 
     qc_tss_enrich, qc_genebody_enrich, qc_bam_cor, qc_peak_idr, 
@@ -37,6 +40,7 @@ class AtacRn(object):
         self.bam_list = list_hiseq_file(self.project_dir, 'bam_rmdup', 'r1')
         self.bw_list = list_hiseq_file(self.project_dir, 'bw', 'r1')
         self.peak_list = list_hiseq_file(self.project_dir, 'peak', 'r1')
+        Config().dump(self.__dict__, self.config_yaml)
 
 
     def run_fx_r1(self, x):
@@ -62,33 +66,31 @@ class AtacRn(object):
 
 
     def run(self):
-        # 1. save config
-        Config().dump(self.__dict__, self.config_yaml)
-        # 2. run AtacR1
-        self.run_multi_fx()
-        # 3. run AtacRn, merge
-        if len(self.rep_list) == 1:
-            log.info('atac_rn() skipped, only 1 rep found')
-            hiseq_copy_r1(self.project_dir)
-        else:   
-            hiseq_merge_bam(self.project_dir, 'rn')
-            hiseq_pcr_dup(self.project_dir, '_rn')
-            hiseq_call_peak(self.project_dir, 'rn')
-            hiseq_bam2bw(self.project_dir, 'rn')
-            hiseq_call_peak(self.project_dir, 'rn')
-            # qc_trim(self.project_dir, 'rn')
-            # qc_align(self.project_dir, 'rn')
-            qc_lendist(self.project_dir, 'rn')
-            qc_frip(self.project_dir, 'rn')
-            qc_tss_enrich(self.project_dir, 'rn')
-            qc_genebody_enrich(self.project_dir, 'rn')
-            # specific for rn
-            qc_bam_cor(self.project_dir, 'rn')
-            qc_peak_idr(self.project_dir, 'rn')
-            qc_peak_overlap(self.project_dir, 'rn')
-            qc_bam_fingerprint(self.project_dir, 'rn')
+        # 1. run r1
+        self.run_fx_rn()
+        # # 2. run rn
+        # if len(self.rep_list) == 1:
+        #     log.info('atac_rn() skipped, only 1 rep found')
+        #     hiseq_copy_r1(self.project_dir)
+        # else:   
+        #     hiseq_merge_bam(self.project_dir, 'rn')
+        #     hiseq_pcr_dup(self.project_dir, '_rn')
+        #     hiseq_call_peak(self.project_dir, 'rn')
+        #     hiseq_bam2bw(self.project_dir, 'rn')
+        #     hiseq_call_peak(self.project_dir, 'rn')
+        #     # qc_trim(self.project_dir, 'rn')
+        #     # qc_align(self.project_dir, 'rn')
+        #     qc_lendist(self.project_dir, 'rn')
+        #     qc_frip(self.project_dir, 'rn')
+        #     qc_tss_enrich(self.project_dir, 'rn')
+        #     qc_genebody_enrich(self.project_dir, 'rn')
+        #     # specific for rn
+        #     qc_bam_cor(self.project_dir, 'rn')
+        #     qc_peak_idr(self.project_dir, 'rn')
+        #     qc_peak_overlap(self.project_dir, 'rn')
+        #     qc_bam_fingerprint(self.project_dir, 'rn')
         # 4. report
-        HiSeqRpt(self.project_dir, overwrite=self.overwrite).run()
+        # HiSeqRpt(self.project_dir, overwrite=self.overwrite).run()
 
 
 class AtacRnConfig(object):
@@ -102,6 +104,8 @@ class AtacRnConfig(object):
             'fq1': None,
             'fq2': None,
             'out_dir': None,
+            'smp_name': None,
+            'smp_name_list': None,
         }
         self = update_obj(self, args_init, force=False)
         self.hiseq_type = 'atac_rn'
@@ -120,8 +124,8 @@ class AtacRnConfig(object):
         self.fq1 = file_abspath(self.fq1)
         self.fq2 = file_abspath(self.fq2)
         # fix smp_name (str, list)
-        if not isinstance(self.smp_name, str):
-            self.smp_name = fx_name(self.fq1[0], fix_pe=True, fix_rep=True, fix_unmap=True)
+        # if not isinstance(self.smp_name, str):
+        self.smp_name = fx_name(self.fq1[0], fix_pe=True, fix_rep=True, fix_unmap=True)
         # for smp_name_list
         if isinstance(self.smp_name_list, list):
             stag = len(self.smp_name_list) == len(self.fq1)
@@ -136,11 +140,13 @@ class AtacRnConfig(object):
 
     def init_files(self):
         self.project_name = self.smp_name
+        self.project_dir = os.path.join(self.out_dir, self.smp_name)
         atac_dirs = get_atac_dirs(self.out_dir, self.smp_name)
         atac_files = get_atac_files(self.out_dir, self.smp_name, self.fq1, self.fq2)
         self = update_obj(self, atac_dirs, force=True)
         self = update_obj(self, atac_files, force=True)
-        map(check_dir, atac_dirs)
+        # map(check_dir, atac_dirs.values())
+        [check_dir(i) for i in atac_dirs.values()]
 
 
 def get_args():

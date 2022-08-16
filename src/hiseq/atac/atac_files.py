@@ -41,15 +41,18 @@ def get_atac_dirs(x, smp_name):
 
 def get_atac_files(x, smp_name, fq1, fq2):
     """
-    x is the project_dir
+    x, is the out_dir
     """
     dd = get_atac_dirs(x, smp_name) #
     config_dir = dd.get('config_dir', x)
+    clean_dir = dd.get('clean_dir', x)
     bam_dir = dd.get('bam_dir', x)
     peak_dir = dd.get('peak_dir', x)
     report_dir = dd.get('report_dir', x)
     d = {
         'config_yaml': os.path.join(config_dir, 'config.yaml'),
+        'trim_stat': os.path.join(clean_dir, smp_name+'.trim.stat'),
+        'trim_json': os.path.join(clean_dir, smp_name+'.trim.json'),
         'align_scale_json': os.path.join(bam_dir, 'scale.json'),
         'pcr_dup_json': os.path.join(bam_dir, 'pcr_dup.json'),
         'bam_raw': os.path.join(bam_dir, smp_name+'.raw.bam'),
@@ -63,7 +66,8 @@ def get_atac_files(x, smp_name, fq1, fq2):
     }    
     d.update(atac_align_files(x, smp_name))
     d.update(atac_spikein_files(x, smp_name))
-    d.update(atac_fq_files(x, smp_name, fq1, fq2))
+    if isinstance(fq1, str) and isinstance(fq2, str):
+        d.update(atac_fq_files(x, smp_name, fq1, fq2))
     d.update(atac_qc_files(x, smp_name))
     return d
 
@@ -115,8 +119,6 @@ def atac_fq_files(x, smp_name, fq1, fq2):
         'raw_fq2': os.path.join(raw_dir, os.path.basename(fq2)),
         'clean_fq1': os.path.join(clean_dir, os.path.basename(fq1)),
         'clean_fq2': os.path.join(clean_dir, os.path.basename(fq2)),
-        'trim_stat': os.path.join(clean_dir, smp_name+'.trim.stat'),
-        'trim_json': os.path.join(clean_dir, smp_name+'.trim.json'),
     }
     d.update({
         'raw_fq_list': [d.get('raw_fq1'), d.get('raw_fq2')],
@@ -147,15 +149,15 @@ def atac_qc_files(x, smp_name):
         'genebody_enrich_matrix_log': '05.genebody_enrich.log',
         'genebody_enrich_png': '05.genebody_enrich.png',
         'genebody_enrich_cmd': '05.genebody_enrich.cmd.sh',
-        'bam_cor_npz': self.qc_dir + '/06.bam_cor.npz',
-        'bam_cor_counts': self.qc_dir + '/06.bam_cor.counts.tab',
-        'bam_cor_heatmap_png': self.qc_dir + '/06.bam_cor.cor_heatmap.png',
-        'bam_cor_pca_png': self.qc_dir + '/06.bam_cor.cor_PCA.png',
-        'peak_idr_png': self.qc_dir + '/07.peak_idr.png',
-        'peak_idr_txt': self.qc_dir + '/07.peak_idr.txt',
-        'peak_overlap_png': self.qc_dir + '/08.peak_overlap.png',
-        'peak_overlap_tiff': self.qc_dir + '/08.peak_overlap.tiff',
-        'bam_fingerprint_png': self.qc_dir + '/09.fingerprint.png',
+        'bam_cor_npz': '06.bam_cor.npz',
+        'bam_cor_counts': '06.bam_cor.counts.tab',
+        'bam_cor_heatmap_png': '06.bam_cor.cor_heatmap.png',
+        'bam_cor_pca_png': '06.bam_cor.cor_PCA.png',
+        'peak_idr_png': '07.peak_idr.png',
+        'peak_idr_txt': '07.peak_idr.txt',
+        'peak_overlap_png': '08.peak_overlap.png',
+        'peak_overlap_tiff': '08.peak_overlap.tiff',
+        'bam_fingerprint_png': '09.fingerprint.png',
     }
     return {k:os.path.join(qc_dir, v) for k,v in d.items()}
 

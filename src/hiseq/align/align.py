@@ -39,6 +39,37 @@ class Align(object):
     """
     def __init__(self, **kwargs):
         self = update_obj(self, kwargs, force=True)
+        self.init_args()
+
+
+    def init_args(self):
+        args_init = {
+            'aligner': 'bowtie2',
+            'fq1': None,
+            'fq2': None,
+            'out_dir': None,
+            'smp_name': None,
+            'unique_only': False,
+            'index_list': None,
+            'extra_index': None,
+            'genome': None,
+            'genome_index': None,
+            'spikein': None,
+            'spikein_index': None,
+            'to_rRNA': False,
+            'rRNA_index': None,
+            'to_chrM': False,
+            'to_MT_trRNA': False,
+            'threads': 1,
+            'parallel_jobs': 1,
+            'overwrite': False,
+            'keep_tmp': False,
+            'genome_size': 0,
+            'genome_size_file': None,
+            'extra_para': None,
+            'verbose': False,
+        }
+        self = update_obj(self, args_init, force=False)
 
 
     def show_msg(self):

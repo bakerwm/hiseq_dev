@@ -94,8 +94,18 @@ class TrimR1Config(object):
             'smp_name': None,
             'threads': 4,
             'rm_dup': False,
-            'cut_after_trim': 0, # skip, str
+            'cut_before_trim': '0',
+            'cut_after_trim': '0', # skip, str
             'keep_tmp': False,
+            'len_min': 0,
+            'len_max': 0,
+            'adapter3': None,
+            'Adapter3': None,
+            'adapter5': None,
+            'Adapter5': None,
+            'rm_polyN': False,
+            'discard_untrimmed': False,
+            'overwrite': False,
         }
         self = update_obj(self, args_init, force=False)
         self.hiseq_type = 'trim_r1' #
@@ -112,6 +122,7 @@ class TrimR1Config(object):
         # fix cut_after_trim
         if self.cut_after_trim is None:
             self.cut_after_trim = '0' # default
+        self.cut_after_trim = str(self.cut_after_trim)
         self.cut2_l, self.cut2_r = self.parse_cut_arg(self.cut_after_trim)
         self.cut2_skipped = (self.cut2_l + abs(self.cut2_r) == 0)
 
@@ -174,7 +185,7 @@ class TrimR1Config(object):
             l = eval(m.group(1))
             r = eval(m.group(3)) if m.group(2) else 0
         else:
-            raise ValueError('unknown cut arg: {}'.format(s))
+            raise ValueError('unknown cut arg: {}, {}'.format(s, type(s).__name__))
         return [l, r]
 
 

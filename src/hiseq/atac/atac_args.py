@@ -185,5 +185,7 @@ def get_args_opt(parser):
         help='Number of jobs run in parallel, default: [1]')
     parser.add_argument('-O', '--overwrite', action='store_true',
         help='if specified, overwrite exists file')
+    parser.add_argument('-f', '--fast-mode', dest='fast_mode', action='store_true',
+        help='Run pipeline in fast-mode')
     return parser
 

@@ -86,7 +86,7 @@ class CallPeak(object):
         }
         if isinstance(self.genome, str):
             self.genome_size = g.get(self.genome, 0)
-            self.genome_size_file = Genome(genome=self.genome).fasize()
+            self.genome_size_file = Genome(genome=self.genome).fai
             if self.genome_size is None:
                 raise ValueError('unknown genome: {}'.format(self.genome))
         elif isinstance(self.genome_size, int):

@@ -30,7 +30,7 @@ from hiseq.utils.utils import (
 )
 from hiseq.utils.hiseq_utils import read_hiseq, list_hiseq_file, is_hiseq_dir
 from hiseq.utils.tmp import Bam2cor, Bam2fingerprint,  PeakIDR, BedOverlap, PeakFRiP
-from hiseq.atac.utils import get_mito_count
+from hiseq.atac.atac_utils import get_mito_count
 
 
 ################################################################################
@@ -52,7 +52,7 @@ def qc_trim_summary(x, hiseq_type='r1'):
         # update
         if file_exists(a.trim_json):
             d1 = Config().load(a.trim_json)
-            d1['rm_pct'] = 100.0 - d1.get('out_pct')
+            d1['rm_pct'] = 100.0 - d1.get('out_pct', 0)
             d.update(d1)
         # update more
         d.update({
