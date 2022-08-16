@@ -258,9 +258,10 @@ def hiseq_merge_trim(x, hiseq_type='_rn'):
         tx = [tx]
     for i in tx:
         di = Config().load(i)
-        for k,v in di.items():
-            vv = v if isinstance(v, str) else d.get(k, 0) + v
-            d.update({k:vv})
+        if isinstance(di, dict):
+            for k,v in di.items():
+                vv = v if isinstance(v, str) else d.get(k, 0) + v
+                d.update({k:vv})
     d.update({
         'name': a.smp_name,
         'percent': round(d.get('clean', 0) / d.get('total', 1) * 100, 1),
