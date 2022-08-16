@@ -418,7 +418,8 @@ def run_shell_cmd(cmd):
         preexec_fn=os.setsid) # to make a new process with a new PGID
     pid = p.pid
     pgid = os.getpgid(pid)
-    log.info('run_shell_cmd: PID={}, PGID={}, CMD={}'.format(pid, pgid, 'cmd'))
+    cmd_name = '{} ...'.format(cmd.split()[0])
+    log.info('run_shell_cmd: PID={}, PGID={}, CMD={}'.format(pid, pgid, cmd_name))
     stdout, stderr = p.communicate(cmd)
     rc = p.returncode
     err_str = 'PID={}, PGID={}, RC={}\nSTDERR={}\nSTDOUT={}'.format(

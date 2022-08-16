@@ -17,6 +17,8 @@ from hiseq.utils.genome import Genome
 from hiseq.align.align_index import AlignIndex, check_index_args
 from hiseq.utils.file import check_dir, file_abspath, file_exists, fix_out_dir
 from hiseq.utils.utils import log, update_obj, Config, get_date, init_cpu
+from hiseq.atac.atac_args import get_args_atac_rx
+# from hiseq.atac.atac_files import get_atac_dirs, get_atac_files
 from hiseq.atac.atac_rn import AtacRn
 from hiseq.report.hiseq_report import HiSeqRpt
 
