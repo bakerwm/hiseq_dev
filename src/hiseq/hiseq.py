@@ -36,6 +36,11 @@ from hiseq.sample.sample import Sample
 from hiseq.sample.sample import get_args as add_sample_args
 
 
+## pipeline
+from hiseq.atac.atac import get_args as add_atac_args
+from hiseq.atac.atac import Atac
+
+
 # from hiseq.qc.fastqc import Fastqc
 # from hiseq.qc.fastqc import get_args as add_fastqc_args
 
@@ -184,17 +189,10 @@ class Hiseq(object):
         
 
 
-
-
-
-# ## pipelines
-
-#     def atac(self):
-#         """
-#         ATACseq pipeline
-#         """
-#         args = self.init_args(add_atac_args())
-#         Atac(**args).run()
+# pipeline
+    def atac(self):
+        args = self.init_args(add_atac_args())
+        Atac(**args).run()
 
 
 #     def cnr(self):
