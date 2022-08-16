@@ -40,7 +40,7 @@ class AtacRn(object):
         args_local = AtacRnConfig(**self.__dict__)
         self = update_obj(self, args_local.__dict__, force=True)
         # self.init_files()
-        self.bam_list = list_hiseq_file(self.project_dir, 'bam_rmdup', 'r1')
+        self.bam_list = list_hiseq_file(self.project_dir, 'bam', 'r1')
         self.bw_list = list_hiseq_file(self.project_dir, 'bw', 'r1')
         self.peak_list = list_hiseq_file(self.project_dir, 'peak', 'r1')
         Config().dump(self.__dict__, self.config_yaml)
@@ -63,7 +63,7 @@ class AtacRn(object):
     def run_fx_rn(self):
         if self.parallel_jobs > 1 and len(self.fq1) > 1:
             with Pool(processes=self.parallel_jobs) as pool:
-                pool.map(self.run_single_fx, self.fq1)
+                pool.map(self.run_fx_r1, self.fq1)
         else:
             [self.run_fx_r1(i) for i in self.fq1]
 

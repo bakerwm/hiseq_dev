@@ -21,7 +21,7 @@ import glob
 import importlib.resources as res
 from hiseq.utils.utils import log, update_obj, Config #, run_shell_cmd
 from hiseq.utils.seq import list_fx, fx_name, check_fx_paired
-from hiseq.utils.file import list_dir, file_exists
+from hiseq.utils.file import list_dir, file_exists, file_abspath
 
 
 ## functions for hiseq-global
@@ -192,7 +192,6 @@ def list_hiseq_dir(x, hiseq_type='auto'):
                     r1 = [j for i in rn for j in list_hiseq_dir(i, 'r1')]
                 except:
                     r1 = []
-                    # print('!B-1', rn)
                 out = rn + r1
                 # for rx
                 out.append(x)
@@ -340,8 +339,12 @@ class HiSeqReader(object):
 
 
 class HiSeqDesignAtac(object):
+    """
+    structure: {smp_name: {rep1: [fq1, fq2]}}
+    """
     def __init__(self, **kwargs):
         self = update_obj(self, kwargs, force=True)
+        self.init_args()
 
 
     def init_args(self):
@@ -384,8 +387,8 @@ class HiSeqDesignAtac(object):
             return None
             # raise ValueError('fq_dir, fq1,fq2, failed')
         # separate fq1, fq2
-        fq1 = [i for i in f_list if fx_name(i).endswith('1')]
-        fq2 = [i for i in f_list if fx_name(i).endswith('2')]
+        fq1 = [i for i in f_list if fx_name(i).endswith('_1')]
+        fq2 = [i for i in f_list if fx_name(i).endswith('_2')]
         if not check_fx_paired(fq1, fq2):
             log.error('fq not paired, check -r, -1, -2')
             return None
@@ -439,7 +442,192 @@ class HiSeqDesignAtac(object):
                 )
         msg.append('\n'.join([
             '{:>8}: {}'.format('samples', len(self.fq_groups)),
-            '{:>8}: {}'.format('fq pairs', n_fq)
+            '{:>8}: {}'.format('fq_pairs', n_fq)
+        ]))
+        msg.append('='*80)
+        out = '\n'.join(msg)
+        print(out)
+
+
+    def run(self):
+        self.fq_groups = self.parse_fq()
+        self.show_msg()
+        Config().dump(self.fq_groups, self.design)
+
+
+class HiSeqDesignCnr(object):
+    """
+    structure: {
+        smp_name:{
+            ip: {
+                rep1: [fq1, fq2],
+                rep2: [fq1, fq2],
+            }
+            input: {
+                rep1: [fq1, fq2],
+                rep2: [fq1, fq2],
+            }
+        },
+    }
+    """
+    def __init__(self, **kwargs):
+        self = update_obj(self, kwargs, force=True)
+        self.init_args()
+
+
+    def init_args(self):
+        args_init = {
+            'design': None,
+            'fq_dir': None,
+            'fq1': None,
+            'fq2': None,
+            'ip': None, # required
+            'input': None, # required or None
+            'append': True,
+        }
+        self = update_obj(self, args_init, force=False)
+        self.hiseq_type = 'cnr_rd'
+        self.build_design = False # force
+        self.fq_dir = file_abspath(self.fq_dir)
+
+
+    def list_fq_dir(self, x):
+        if isinstance(x, str):
+            f_list = list_fx(x)
+        if len(f_list) < 2:
+            sub_dirs = list_dir(x, include_dirs=True)
+            sub_files = [list_fx(i) for i in sub_dirs if os.path.isdir(i)]
+            f_list = [f for i in sub_files if isinstance(i, list) for f in i]
+        if len(f_list) < 2:
+            log.error('not enough fq files: {}'.format(x))
+            return None
+        return f_list
+
+
+    def list_fq_files(self):
+        if isinstance(self.fq_dir, str):
+            f_list = self.list_fq_dir(self.fq_dir)
+        elif isinstance(self.fq1, list) and isinstance(self.fq2, list):
+            f_list = self.fq1 + self.fq2
+        elif isinstance(self.fq1, str) and isinstance(self.fq2, str):
+            f_list = [self.fq1, self.fq2]
+        else:
+            f_list = []
+        if len(f_list) < 2: # paired
+            log.error('no fq files found, check -r, -1, -2')
+            f_list = []
+        # check fq1, fq2
+        fq1 = [i for i in f_list if fx_name(i).endswith('_1')]
+        fq2 = [i for i in f_list if fx_name(i).endswith('_2')]
+        if len(fq2) == 0:
+            fq2 = [None] * len(fq1)
+        # check ip/input
+        if len(fq2) > 0 and len(fq1) == len(fq2):
+            out = [fq1, fq2]
+        else:
+            log.error('fq1, fq2 not paired, check -r, -1, -2')
+            out = None
+        return out
+
+
+    def fix_ip_input(self):
+        """
+        Criteria: 
+        1. ip (required), str, list
+          - unique samples
+        2. input (optional), None, str, list
+          - as ip
+        """
+        if isinstance(self.ip, list):
+            if isinstance(self.input, list):
+                if len(self.input) == 1:
+                    self.input = self.input * len(self.ip)
+                elif len(self.ip) == len(self.input):
+                    pass
+                else:
+                    self.input = None
+            else:
+                self.input = None
+        else:
+            log.error('unknown input')
+            return None
+        # show message
+        if self.input is None:
+            self.input = [None] * len(self.ip)
+        return [self.ip, self.input]
+
+
+    def parse_fq_by_name(self, x):
+        fq_list = self.list_fq_files()
+        d = {} # dict
+        if isinstance(fq_list, list):
+            fq1, fq2 = fq_list
+            for fq1, fq2 in zip(fq1, fq2):
+                if x in fq1:
+                    rep_name = fx_name(fq1, fix_pe=True, fix_unmap=True)
+                    d.update({
+                        rep_name: [fq1, fq2]
+                    })
+        return d
+
+
+    def parse_fq(self):
+        # recognize samples by name: filename_repx.fq.gz
+        d = {}
+        i_list = self.fix_ip_input()
+        if isinstance(i_list, list):
+            ip_list, input_list = i_list
+            for i,j in zip(ip_list, input_list):
+                ip = self.parse_fq_by_name(i)
+                input = self.parse_fq_by_name(j)
+                # smp_name
+                smp_name = fx_name(list(ip.keys()), fix_rep=True)[0] # first
+                d.update({
+                    smp_name: {
+                        'ip': ip,
+                        'input': input,
+                    }
+                })
+        return d
+
+
+    def update_design(self):
+        # load design/fq_groups
+        if file_exists(self.design) and self.append:
+            d = Config().load(self.design)
+        else:
+            d = {}
+        # new fq_groups
+        d.update(self.parse_fq())
+        return d
+
+
+    def show_msg(self):
+        msg = ['='*80]
+        n0 = 0
+        n1 = len(self.fq_groups)
+        n_fq = 0
+        for k,v in self.fq_groups.items():
+            # smp_name, ...
+            n0 += 1
+            msg.append('[{}/{}] {}'.format(n0, n1, k))
+            for i,j in v.items():
+                # ip, input
+                msg.append('{} [{}]:'.format(' '*2, i))
+                for i2, j2 in j.items():
+                    # rep, (r1, r2)
+                    n_fq += 1
+                    # rep1, ...
+                    msg.append(
+                        '\n'.join([
+                            '{} {}'.format(' '*4, i2),
+                            '{} r1: {}'.format(' '*6, j2[0]),
+                            '{} r2: {}'.format(' '*6, j2[1]),
+                        ])
+                    )
+        msg.append('\n'.join([
+            '{:>8}: {}'.format('sample_pairs', len(self.fq_groups)),
+            '{:>8}: {}'.format('fastq_pairs', n_fq)
         ]))
         msg.append('='*80)
         out = '\n'.join(msg)
@@ -455,9 +643,13 @@ class HiSeqDesignAtac(object):
 # def main():
 #     args = {
 #         'design': 'aaa.yaml',
-#         'fq_dir': '/data/yulab/wangming/work/wmlib/hiseq_dev/test/data',
+#         # 'fq_dir': '/data/yulab/wangming/work/wmlib/hiseq_dev/test/data',
+#         'fq_dir': '/data/yulab/wangming/work/yu_2021/piwi_lxh/data/clean_data/CnR',
+#         'ip': ['K4me3', 'K9me3', 'K27me3'],
+#         'input': ['IgG'],
 #     }
-#     HiSeqDesignAtac(**args).run()
+#     # HiSeqDesignAtac(**args).run()
+#     HiSeqDesignCnr(**args).run()
 
 
 # if __name__ == '__main__':

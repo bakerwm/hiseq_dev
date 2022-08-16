@@ -3,9 +3,7 @@
 
 """
 ATAC-seq pipeline: level-2 (run pipe)
-
 loading fastq config from `design.yaml`, run pipeline, with specific parameters
-
 analysis-module:
 """
 

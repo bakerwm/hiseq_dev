@@ -90,8 +90,9 @@ class AtacR1Config(object):
             'overwrite': False,
             'bin_size': 50,
             'normalizeUsing': 'RPGC',
-            'genome_size': 0,
+            'genome_size': None,
             'genome_size_file': None,
+            'genome_dir': None,
             'keep_tmp': None,
             'trimmed': False,
             'cut': False,
@@ -102,7 +103,6 @@ class AtacR1Config(object):
         self = update_obj(self, args_init, force=False)
         self.hiseq_type = 'atac_r1'
         self.out_dir = fix_out_dir(self.out_dir)
-
         if not isinstance(self.out_dir, str):
             self.out_dir = str(pathlib.Path.cwd())
         self.out_dir = file_abspath(self.out_dir)
@@ -111,7 +111,7 @@ class AtacR1Config(object):
         if self.cut:
             self.cut_to_length = 50
             self.recursive = True
-        self.init_fx()
+        self.init_fq()
         self.init_index()
         self.init_files()
         # threads
@@ -120,10 +120,10 @@ class AtacR1Config(object):
             self.parallel_jobs)
 
 
-    def init_fx(self):
+    def init_fq(self):
         if isinstance(self.fq1, str) and isinstance(self.fq2, str):
             if not check_fx_paired(self.fq1, self.fq2):
-                raise ValueError('--fq1, --fq2 faild')
+                raise ValueError('--fq1, --fq2 failed')
         else:
             raise ValueError('--fq1, --fq2, not str')
         # format
