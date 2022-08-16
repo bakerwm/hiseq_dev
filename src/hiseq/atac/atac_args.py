@@ -43,8 +43,8 @@ def get_args_io1():
         help='Fastq file, read1 of PE')
     parser.add_argument('-2', '--fq2', required=True,
         help='Fastq file, read2 of PE')
-    parser.add_argument('-o', '--out_dir', default=None,
-        help='Directory saving results, default: [pwd]')
+    # parser.add_argument('-o', '--out-dir', dest='out_dir', default=None,
+    #     help='Directory saving results, default: [pwd]')
     parser.add_argument('-n', '--smp-name', dest='smp_name', default=None, 
         help='The name of the sample')
     return parser
@@ -67,8 +67,8 @@ def get_args_io2():
         help='Fastq file, read1 of PE')
     parser.add_argument('-2', '--fq2', nargs='+', required=True,
         help='Fastq file, read2 of PE')
-    parser.add_argument('-o', '--out_dir', default=None,
-        help='Directory saving results, default: [pwd]')
+    # parser.add_argument('-o', '--out-dir', dest='out_dir', default=None,
+    #     help='Directory saving results, default: [pwd]')
     parser.add_argument('-n', '--smp-name', dest='smp_name', default=None, 
         help='The name of the sample')
     parser.add_argument('-N', '--smp-name-list', dest='smp_name_list', default=None, 
@@ -95,8 +95,8 @@ def get_args_io3():
     #     help='Fastq file, read1 of PE')
     # parser.add_argument('-2', '--fq2', nargs='+', required=True,
     #     help='Fastq file, read2 of PE')
-    parser.add_argument('-o', '--out_dir', default=None,
-        help='Directory saving results, default: [pwd]')
+    # parser.add_argument('-o', '--out-dir', dest='out_dir', default=None,
+    #     help='Directory saving results, default: [pwd]')
     # parser.add_argument('-n', '--smp-name', dest='smp_name', default=None, 
     #     help='The name of the sample')
     # parser.add_argument('-N', '--smp-name-list', dest='smp_name_list', default=None, 
@@ -128,13 +128,15 @@ def get_args_io4():
         help='Fastq file, read1 of PE')
     parser.add_argument('-2', '--fq2', nargs='+', required=False,
         help='Fastq file, read2 of PE')
-    parser.add_argument('-o', '--out_dir', default=None,
-        help='Directory saving results, default: [pwd]')
+    # parser.add_argument('-o', '--out-dir', dest='out_dir', default=None,
+    #     help='Directory saving results, default: [pwd]')
     return parser
 
 
 def get_args_index1(parser):
     # priority: index_list > extra_index > ...
+    parser.add_argument('-o', '--out-dir', dest='out_dir', default=None,
+        help='Directory saving results, default: [pwd]')
     parser.add_argument('-g', '--genome', default=None, 
         help='The name of the genome, eg: dm6, hg38, default: [None]')
     parser.add_argument('--genome-index', dest="genome_index", default=None,
@@ -172,12 +174,16 @@ def get_args_opt(parser):
     # optional further
     parser.add_argument('--binSize', dest='bin_size', default=50, type=int,
         help='binSize for downstream analysis')
-    parser.add_argument('--keep-dup', dest='keep_dup', action='store_true',
+    parser.add_argument('--keep-dup', dest='rm_dup', action='store_false',
         help='keep duplicates')
     parser.add_argument('--keep-temp', dest='keep_temp', action='store_false',
         help='keep temp files')
     parser.add_argument('--gene-bed', dest='gene_bed', default=None,
         help='The BED or GTF of genes, for TSS enrichment analysis')
+    parser.add_argument('--extend-reads', dest='extend_reads', 
+        action='store_true', help='Extend reads for bigwig')
+    parser.add_argument('--center-reads', dest='center_reads', 
+        action='store_true', help='Center reads for bigwig')
     parser.add_argument('-p', '--threads', default=1, type=int,
         help='Number of threads to launch, default [1]')
     parser.add_argument('-j', '--parallel-jobs', dest='parallel_jobs',
@@ -185,7 +191,7 @@ def get_args_opt(parser):
         help='Number of jobs run in parallel, default: [1]')
     parser.add_argument('-O', '--overwrite', action='store_true',
         help='if specified, overwrite exists file')
-    parser.add_argument('-f', '--fast-mode', dest='fast_mode', action='store_true',
-        help='Run pipeline in fast-mode')
+    parser.add_argument('-f', '--fast-mode', dest='fast_mode', 
+        action='store_true', help='Run pipeline in fast-mode')
     return parser
 

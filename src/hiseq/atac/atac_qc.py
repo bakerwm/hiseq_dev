@@ -542,7 +542,7 @@ def qc_peak_overlap(x, hiseq_type='rn', peak_type='r1'):
             else:
                 BedOverlap(**args).run()
         else:
-            log.error('qc_peak_overwrite() failed, peak files not exists')
+            log.error('qc_peak_overlap() failed, peak files not exists')
 
 
 def qc_bam_fingerprint(x, hiseq_type='rn', bam_type='r1'):

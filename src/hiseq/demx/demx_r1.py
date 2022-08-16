@@ -54,7 +54,7 @@ class DemxR1(object):
     >>> args = {
         'fq1': '1m.r1.fq.gz',
         'fq2': '1m.r2.fq.gz',
-        'outdir': 'aaa',
+        'out_dir': 'aaa',
         'index_table': 'index.csv',
         'mismatch': 0,
         'demo': False,

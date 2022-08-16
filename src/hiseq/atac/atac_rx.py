@@ -14,6 +14,7 @@ import os
 # import argparse
 from multiprocessing import Pool
 from hiseq.utils.genome import Genome
+from hiseq.align.align_index import AlignIndex, check_index_args
 from hiseq.utils.file import check_dir, file_abspath, file_exists, fix_out_dir
 from hiseq.utils.utils import log, update_obj, Config, get_date, init_cpu
 from hiseq.atac.atac_rn import AtacRn
@@ -66,6 +67,7 @@ class AtacRxConfig(object):
 
     def init_args(self):
         args_init = {
+            'aligner': 'bowtie2',
             'design': None, # required
             'build_design': False,
         }
@@ -74,8 +76,31 @@ class AtacRxConfig(object):
         self.out_dir = fix_out_dir(self.out_dir)
         if not file_exists(self.design):
             raise ValueError('file not exists, --design {}'.format(self.design))
-        self.init_files()
         self.init_fx()
+        self.init_index()
+        self.init_files()
+
+
+    def init_fx(self):
+        """
+        Loading fastq config from design
+        """
+        self.fq_groups = Config().load(self.design)
+        if len(self.fq_groups) == 0:
+            raise ValueError('no fq found: {}'.format(self.design))
+
+
+    def init_index(self):
+        index_list = check_index_args(**self.__dict__)
+        if len(index_list) == 0:
+            raise ValueError('no index found')
+        # update: genome_size_file
+        if isinstance(self.extra_index, str):
+            self.genome_size_file = AlignIndex(self.extra_index).index_size(out_file=True)
+        elif isinstance(self.genome, str):
+            self.genome_size_file = Genome(self.genome).fai
+        else:
+            raise ValueError('--genome or --extra-index; required')
 
 
     def init_files(self):
@@ -91,15 +116,6 @@ class AtacRxConfig(object):
         }
         self = update_obj(self, default_files, force=True) # key
         check_dir([self.config_dir, self.report_dir])
-
-
-    def init_fx(self):
-        """
-        Loading fastq config from design
-        """
-        self.fq_groups = Config().load(self.design)
-        if len(self.fq_groups) == 0:
-            raise ValueError('no fq found: {}'.format(self.design))
 
 
 def get_args():

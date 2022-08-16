@@ -7,9 +7,9 @@ Convert bam to bigwig: bamCoverage
 fwd: scale(fwd): fwd / total
 rev: scale(rev): rev / total
 # output
-outdir/out.bigWig
-outdir/out_fwd.bigWig
-outdir/out_rev.bigWig
+out_dir/out.bigWig
+out_dir/out_fwd.bigWig
+out_dir/out_rev.bigWig
 Example:
 $ bamCoverage -b in.bam -o out.bw --binSize 50 \
   --effectiveGenomeSize 100 \

@@ -43,7 +43,7 @@ class BamFragSize(object):
     def init_args(self):
         args_init = {
             'bam': None,
-            'outdir': None,
+            'out_dir': None,
             'labels': None,
             'as_se': False,
             'max_count': 0,
@@ -69,9 +69,9 @@ class BamFragSize(object):
             pass
         else:
             self.labels = None
-        # outdir
-        if not isinstance(self.outdir, str):
-            self.outdir = str(pathlib.Path.cwd())
+        # out_dir
+        if not isinstance(self.out_dir, str):
+            self.out_dir = str(pathlib.Path.cwd())
         # labels
         bam_names = file_prefix(self.bam)
         if self.labels is None:
@@ -84,17 +84,17 @@ class BamFragSize(object):
         """Run for single bam
         stat
         pdf
-        require outdir
+        require out_dir
         """
         bam_i = self.bam.index(bam) # index for bam file
         labels = self.labels[bam_i] # labels for bam
-        csv_file = os.path.join(self.outdir, labels + '.fragsize.csv')
+        csv_file = os.path.join(self.out_dir, labels + '.fragsize.csv')
         if os.path.exists(csv_file) and not self.overwrite:
             log.info('BamFragSize() skipped, file exists: {}'.format(csv_file))
         else:
             args_local = {
                 'bam': bam,
-                'outdir': self.outdir,
+                'out_dir': self.out_dir,
                 'labels': labels,
                 'as_se': self.as_se,
                 'strandness': self.strandness,
@@ -110,16 +110,16 @@ class BamFragSize(object):
         else:
             [self.run_single_bam(i) for i in self.bam]
         # plot merge
-        csv_file_list = [os.path.join(self.outdir, i + '.fragsize.csv') for i in self.labels]
+        csv_file_list = [os.path.join(self.out_dir, i + '.fragsize.csv') for i in self.labels]
         csv_file_list = [i for i in csv_file_list if os.path.exists(i)]
-        pdf_merge = os.path.join(self.outdir, 'frag_size.pdf')
+        pdf_merge = os.path.join(self.out_dir, 'frag_size.pdf')
         # save to plot
         # to-do: matplotlib function
         hiseq_dir = os.path.dirname(hiseq.__file__)
         frag_plot_r = os.path.join(hiseq_dir, 'bin', 'qc_fragsize.R')
-        stdout = os.path.join(self.outdir, 'frag_plot.plot.stdout')
-        stderr = os.path.join(self.outdir, 'frag_plot.plot.stderr')
-        cmd_file = os.path.join(self.outdir, 'frag_plot.plot.cmd.sh')
+        stdout = os.path.join(self.out_dir, 'frag_plot.plot.stdout')
+        stderr = os.path.join(self.out_dir, 'frag_plot.plot.stderr')
+        cmd_file = os.path.join(self.out_dir, 'frag_plot.plot.cmd.sh')
         cmd = ' '.join([
             'Rscript',
             frag_plot_r,
@@ -177,7 +177,7 @@ class BamFragSizeR1(object):
     def init_args(self):
         args_init = {
             'bam': None,
-            'outdir': None,
+            'out_dir': None,
             'labels': None,
             'as_se': False,
             'max_count': 0,
@@ -195,10 +195,10 @@ class BamFragSizeR1(object):
         # bai
         if not file_exists(self.bam+'.bai'):
             Bam(self.bam).index()
-        # outdir
-        if not isinstance(self.outdir, str):
-            self.outdir = str(pathlib.Path.cwd())
-        check_dir(self.outdir)
+        # out_dir
+        if not isinstance(self.out_dir, str):
+            self.out_dir = str(pathlib.Path.cwd())
+        check_dir(self.out_dir)
         # check strandness
         # as_se: paired end only
         if not (self.is_paired(self.bam) and not self.as_se):
@@ -207,9 +207,9 @@ class BamFragSizeR1(object):
             self.labels = file_prefix(self.bam)
         # output files
         if self.csv_file is None:
-            self.csv_file = os.path.join(self.outdir, self.labels + '.fragsize.csv')
+            self.csv_file = os.path.join(self.out_dir, self.labels + '.fragsize.csv')
         if self.plot_file is None:
-            self.plot_file = os.path.join(self.outdir, self.labels + '.fragsize.pdf')
+            self.plot_file = os.path.join(self.out_dir, self.labels + '.fragsize.pdf')
 
 
     def is_empty(self, bam):
@@ -387,9 +387,9 @@ class BamFragSizeR1(object):
             plot_file = self.plot_file
         hiseq_dir = os.path.dirname(hiseq.__file__)
         frag_plot_r = os.path.join(hiseq_dir, 'bin', 'qc_fragsize.R')
-        stdout = os.path.join(self.outdir, self.labels+'.fragsize.plot.stdout')
-        stderr = os.path.join(self.outdir, self.labels+'.fragsize.plot.stderr')
-        cmd_file = os.path.join(self.outdir, self.labels+'.fragsize.plot.cmd.sh')
+        stdout = os.path.join(self.out_dir, self.labels+'.fragsize.plot.stdout')
+        stderr = os.path.join(self.out_dir, self.labels+'.fragsize.plot.stderr')
+        cmd_file = os.path.join(self.out_dir, self.labels+'.fragsize.plot.cmd.sh')
         cmd = ' '.join([
             'Rscript',
             frag_plot_r,
@@ -414,7 +414,7 @@ class BamFragSizeR1(object):
 
 
 
-def frag_size_picard(bam, outdir=None, smp_name=None):
+def frag_size_picard(bam, out_dir=None, smp_name=None):
     """Calculate PE fragment size, insertion size using Picard
     
     see: https://gatk.broadinstitute.org/hc/en-us/articles/360056968712-CollectInsertSizeMetrics-Picard-
@@ -443,18 +443,18 @@ def frag_size_picard(bam, outdir=None, smp_name=None):
     """
     # check: picard
     if isinstance(bam, str) and file_exists(bam):
-        # outdir
-        if outdir is None:
-            outdir = os.path.dirname(bam)
-        check_dir(outdir)
+        # out_dir
+        if out_dir is None:
+            out_dir = os.path.dirname(bam)
+        check_dir(out_dir)
         # smp_name
         if smp_name is None:
             smp_name = file_prefix(bam)
         # files
-        out_metrics = os.path.join(outdir, smp_name+'.insert_meterics.txt')
-        cmd_txt = os.path.join(outdir, smp_name+'.insert_mertics.cmd.sh')
-        stdout = os.path.join(outdir, smp_name+'.insert_mertics.stdout')
-        stderr = os.path.join(outdir, smp_name+'.insert_mertics.stderr')
+        out_metrics = os.path.join(out_dir, smp_name+'.insert_meterics.txt')
+        cmd_txt = os.path.join(out_dir, smp_name+'.insert_mertics.cmd.sh')
+        stdout = os.path.join(out_dir, smp_name+'.insert_mertics.stdout')
+        stderr = os.path.join(out_dir, smp_name+'.insert_mertics.stderr')
         # command
         cmd = ' '.join([
             '{}'.format(which('picard')), # 
@@ -518,10 +518,10 @@ def frag_size_samtools(infile, outfile=None):
 
 
 def get_args():
-    parser = argparse.ArgumentParser(description='hiseq fragsize -i bam -o outdir')
+    parser = argparse.ArgumentParser(description='hiseq fragsize -i bam -o out_dir')
     parser.add_argument('-i', '--bam', nargs='+', required=True,
         help='BAM files')
-    parser.add_argument('-o', '--outdir', default=None,
+    parser.add_argument('-o', '--out-dir', dest='out_dir', default=None,
         help='output directory to save results')
     parser.add_argument('-l', '--labels', nargs='+', default=None,
         help='label of the bam files')
@@ -546,9 +546,7 @@ if __name__ == '__main__':
     main()
 
 #
-
-
-
+    
 # class BamPEFragSize(object):
 #     """
 #     Calculate insert size of PE, single BAM
@@ -735,9 +733,9 @@ if __name__ == '__main__':
 #         # to-do: matplotlib function
 #         hiseq_dir = os.path.dirname(hiseq.__file__)
 #         frag_plot_r = os.path.join(hiseq_dir, 'bin', 'qc_fragsize.R')
-#         stdout = os.path.join(self.outdir, 'frag_plot.plot.stdout')
-#         stderr = os.path.join(self.outdir, 'frag_plot.plot.stderr')
-#         cmd_file = os.path.join(self.outdir, 'frag_plot.plot.cmd.sh')
+#         stdout = os.path.join(self.out_dir, 'frag_plot.plot.stdout')
+#         stderr = os.path.join(self.out_dir, 'frag_plot.plot.stderr')
+#         cmd_file = os.path.join(self.out_dir, 'frag_plot.plot.cmd.sh')
 #         cmd = ' '.join([
 #             'Rscript',
 #             frag_plot_r,
@@ -772,9 +770,9 @@ if __name__ == '__main__':
 #         # save to plot
 #         hiseq_dir = os.path.dirname(hiseq.__file__)
 #         frag_plot_r = os.path.join(hiseq_dir, 'bin', 'qc_fragsize.R')
-#         stdout = os.path.join(self.outdir, 'frag_plot.plot.stdout')
-#         stderr = os.path.join(self.outdir, 'frag_plot.plot.stderr')
-#         cmd_file = os.path.join(self.outdir, 'frag_plot.plot.cmd.sh')
+#         stdout = os.path.join(self.out_dir, 'frag_plot.plot.stdout')
+#         stderr = os.path.join(self.out_dir, 'frag_plot.plot.stderr')
+#         cmd_file = os.path.join(self.out_dir, 'frag_plot.plot.cmd.sh')
 #         cmd = ' '.join([
 #             'Rscript',
 #             frag_plot_r,

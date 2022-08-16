@@ -417,8 +417,8 @@ class Fastx(object):
         """
         assert isinstance(n, int)
         assert isinstance(p, float)
-        outdir = os.path.dirname(out)
-        check_dir(outdir, create_dirs=True)
+        out_dir = os.path.dirname(out)
+        check_dir(out_dir, create_dirs=True)
         ## warning
         if n > 1000000:
             log.warning('too-big n={}, change to 1000000'.format(n))
@@ -445,8 +445,8 @@ class Fastx(object):
         Create a subsample of input fastq files, default: 1M reads
         Run the whole process for demostration
         """
-        outdir = os.path.dirname(out)
-        check_dir(outdir, create_dirs=True)
+        out_dir = os.path.dirname(out)
+        check_dir(out_dir, create_dirs=True)
         
         if os.path.exists(out):
             log.info('file eixsts, {}'.format(out))

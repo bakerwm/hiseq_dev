@@ -297,7 +297,7 @@ def get_args():
                         help='Fasta/q file, read1 of PE, or SE read')
     parser.add_argument('-2', '--fq2', nargs='+', required=False, default=None,
                         help='Fasta/q file, read2 of PE, or SE read, optional')
-    parser.add_argument('-o', '--outdir', default=None,
+    parser.add_argument('-o', '--out-dir', dest='out_dir', default=None,
                         help='Directory saving results, default: [cwd]')
     parser.add_argument('-g', '--genome', default=None, 
                         help='The name of the genome, [dm6, hg38, mm10]')

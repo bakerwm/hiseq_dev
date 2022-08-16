@@ -243,6 +243,31 @@ def hiseq_align_genome(x, hiseq_type='_r1'):
     s = hiseq_norm_scale(x, hiseq_type=hiseq_type, by_spikein=False)
 
 
+def hiseq_merge_trim(x, hiseq_type='_rn'):
+    """
+    only works for atac_rn
+    """
+    if not is_hiseq_dir(x, '_rn'):
+        log.error('hiseq_merge_bam() skipped, not a hiseq_rn dir: {}'.format(x))
+        return None
+    a = read_hiseq(x, hiseq_type) # for general usage
+    # ['clean', 'dup', 'name', 'percent', 'too_short', 'too_short2', 'total']
+    tx = list_hiseq_file(x, 'trim_json', 'r1')
+    d = {}
+    if isinstance(tx, str):
+        tx = [tx]
+    for i in tx:
+        di = Config().load(i)
+        for k,v in di.items():
+            vv = v if isinstance(v, str) else d.get(k, 0) + v
+            d.update({k:vv})
+    d.update({
+        'name': a.smp_name,
+        'percent': round(d.get('clean', 0) / d.get('total', 1) * 100, 1),
+    })
+    Config().dump(d, a.trim_json)
+
+
 def hiseq_merge_bam(x, hiseq_type='_rn'):
     """
     only works for atac_rn
@@ -452,7 +477,7 @@ def hiseq_call_peak(x, hiseq_type='_r1'):
         'out_dir': a.peak_dir,
         'prefix': a.smp_name,
         'genome': a.genome,
-        'genome_size': a.genome_size,
+        'genome_size': None, # a.genome_size,
         'genome_size_file': a.genome_size_file
     }
     CallPeak(method='macs2', **args).run()
@@ -469,18 +494,20 @@ def hiseq_bam2bw(x, hiseq_type='_r1'):
         log.error('hiseq_bam2bw() skipped, not a {} dir: {}'.format(hiseq_type, x))
         return None
     a = read_hiseq(x, hiseq_type) # for general usage
+    strand_specific = a.hiseq_type.startswith('rna')
     args = {
         'bam': a.bam,
         'prefix': a.smp_name,
         'out_dir': a.bw_dir,
-        'binsize': a.bin_size, # default: 50
-        'strandness': 0, # non-strandness
+        'binSize': a.bin_size, # default: 50
+        'strand_specific': strand_specific, # rna_ only
         'genome': a.genome,
         'scaleFactor': 1.0, # force
         'normalizeUsing': 'RPGC',
         'overwrite': a.overwrite,
-        'genome_size': a.genome_size,
-        'extend_read': True,
+        'genome_size': None, # a.genome_size,
+        'extendReads': True, # a.extend_reads, # force !!!
+        'centerReads': True, # a.center_reads, # force !!!
     }
     Bam2bw(**args).run()
 

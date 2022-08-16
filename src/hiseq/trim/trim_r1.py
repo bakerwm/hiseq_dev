@@ -481,7 +481,7 @@ def get_args_i():
 
 
 def get_args_o(parser):
-    parser.add_argument('-o', '--out_dir', default=None,
+    parser.add_argument('-o', '--out-dir', dest='out_dir', default=None,
         help='The directory to save results.')
     parser.add_argument('-n', '--smp-name', dest='smp_name', default=None,
         help='The prefix of output files')

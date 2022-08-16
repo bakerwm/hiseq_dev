@@ -38,30 +38,30 @@ class AtacR1(object):
 
 
     def run(self):
+        x = self.project_dir
         # 1. symlink raw data
         raw_fq1, raw_fq2 = self.raw_fq_list
         symlink_file(self.fq1, raw_fq1, absolute_path=True)
         symlink_file(self.fq2, raw_fq2, absolute_path=True)
         # 2. run modules
-        hiseq_trim(self.project_dir, '_r1')
-        hiseq_align_genome(self.project_dir, '_r1')
-        hiseq_pcr_dup(self.project_dir, '_r1')
+        hiseq_trim(x, '_r1')
+        hiseq_align_genome(x, '_r1')
+        hiseq_pcr_dup(x, '_r1')
         # # sys.exit(1)
-        hiseq_call_peak(self.project_dir, '_r1')
-        if not self.fast_mode:
-            hiseq_bam2bw(self.project_dir, '_r1') # optional 
+        hiseq_call_peak(x, '_r1')
         if isinstance(self.spikein_index, str):
-            hiseq_align_spikein(self.project_dir, '_r1')
+            hiseq_align_spikein(x, '_r1')
         # 3. qc
-        qc_trim_summary(self.project_dir, '_r1')
-        qc_align_summary(self.project_dir, '_r1')
-        qc_lendist(self.project_dir, '_r1')
-        qc_frip(self.project_dir, '_r1')
+        qc_trim_summary(x, '_r1')
+        qc_align_summary(x, '_r1')
+        qc_lendist(x, '_r1')
+        qc_frip(x, '_r1')
         if not self.fast_mode:
-            qc_tss_enrich(self.project_dir, '_r1')
-            qc_genebody_enrich(self.project_dir, '_r1')
+            hiseq_bam2bw(x, '_r1') # optional 
+            qc_tss_enrich(x, '_r1')
+            qc_genebody_enrich(x, '_r1')
         # 4. report
-        HiSeqRpt(self.project_dir, overwrite=self.overwrite).run()
+        HiSeqRpt(x, overwrite=self.overwrite).run()
 
 
 class AtacR1Config(object):

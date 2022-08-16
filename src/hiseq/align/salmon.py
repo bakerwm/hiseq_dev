@@ -228,7 +228,7 @@ def get_args():
                         help='Fasta/q file, read1 of PE, or SE read')
     parser.add_argument('-2', '--fq2', required=False, default=None,
                         help='Fasta/q file, read2 of PE, or SE read, optional')
-    parser.add_argument('-o', '--out-dir', default=None,
+    parser.add_argument('-o', '--out-dir', dest='out_dir', default=None,
                         help='Directory saving results, default: [cwd]')
     parser.add_argument('-x', '--index', required=True,
                         help='The alignment index for salmon')
