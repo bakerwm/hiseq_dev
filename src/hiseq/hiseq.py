@@ -35,6 +35,8 @@ from hiseq.trim.trim import get_args as add_trim_args
 from hiseq.sample.sample import Sample
 from hiseq.sample.sample import get_args as add_sample_args
 
+from hiseq.bam2bw.bam2bw import Bam2bw
+from hiseq.bam2bw.bam2bw import get_args as add_bam2bw_args
 
 ## pipeline
 from hiseq.atac.atac import get_args as add_atac_args
@@ -49,10 +51,6 @@ from hiseq.atac.atac import Atac
 
 # from hiseq.qc.hiseq_lib import HiseqLib, HiseqLibSmRNA
 # from hiseq.qc.hiseq_lib import get_args as add_p7_args
-
-# # sub-modules-1
-# from hiseq.bam2bw.bam2bw import Bam2bwRn
-# from hiseq.bam2bw.bam2bw import get_args as add_bam2bw_args
 
 # from hiseq.utils.bam import Bam2cor, Bw2cor
 # from hiseq.bam2cor.bam2cor import get_args as add_bam2cor_args
@@ -186,7 +184,11 @@ class Hiseq(object):
     def sample(self):
         args = self.init_args(add_sample_args())
         Sample(**args).run()
-        
+
+
+    def bam2bw(self):
+        args = self.init_args(add_bam2bw_args())
+        Bam2bw(**args).run()
 
 
 # pipeline
@@ -255,14 +257,6 @@ class Hiseq(object):
 #         """
 #         args = self.init_args(add_align_args())
 #         Align(**args).run()
-
-
-#     def bam2bw(self):
-#         """
-#         Convert bam to bw files
-#         """
-#         args = self.init_args(add_bam2bw_args())
-#         Bam2bwRn(**args).run()
 
 
 #     def bam2cor(self):

@@ -22,6 +22,7 @@ from hiseq.utils.file import check_file, symlink_file, file_exists, list_dir
 from hiseq.utils.utils import log, Config, run_shell_cmd
 from hiseq.utils.hiseq_utils import read_hiseq, list_hiseq_file, is_hiseq_dir
 from hiseq.align.align_index import check_index_args
+from hiseq.utils.tmp import bw_compare
 
 
 """
@@ -497,7 +498,7 @@ def hiseq_bam2bw(x, hiseq_type='_r1'):
     a = read_hiseq(x, hiseq_type) # for general usage
     strand_specific = a.hiseq_type.startswith('rna')
     args = {
-        'bam': a.bam,
+        'bam_list': a.bam,
         'prefix': a.smp_name,
         'out_dir': a.bw_dir,
         'binSize': a.bin_size, # default: 50
@@ -522,6 +523,13 @@ def hiseq_bw_compare(x, hiseq_type='_rx'):
     if not (a.is_hiseq and hiseq_type.endswith('rx')):
         log.error('hiseq_bw_compare() failed, only support for rx')
         return None
-    bw_compare(a.ip_bw, a.input_bw, a.bw, 'subtract',
-        threads=a.threads, binsize=100)
+    ip_bw = list_hiseq_file(x, 'ip_bw', '_rx')
+    input_bw = list_hiseq_file(x, 'ip_bw', '_rx')
+    if all(file_exists([ip_bw, input_bw])):
+        bw_compare(a.ip_bw, a.input_bw, a.bw, 'subtract',
+            threads=a.threads, bin_size=100)
+    else:
+        log.error('bw not exists: {}'.format(x))
+
+    
 

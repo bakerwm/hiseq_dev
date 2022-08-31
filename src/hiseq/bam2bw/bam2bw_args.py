@@ -63,14 +63,16 @@ def add_common_parser(parser):
         default=None, help='blacklist file')
     parser.add_argument('-p', dest='numberOfProcessors', type=int, default=4, 
         help='number of processors, default: [4]')
+    parser.add_argument('-j', dest='parallel_jobs', type=int, default=1, 
+        help='number of jobs run in parallel, default: [4]')
     parser.add_argument('-O', '--overwrite', dest='overwrite', action='store_true',
         help='Overwrite output file')
-    parser.add_argument('-sl', '--samplesLabel', nargs='+', default=None,
-        help='labels for samples in plot, default: [None] auto')
-    parser.add_argument('-st', '--startLabel', default='TSS',
-        help='start label, default: [TSS]')
-    parser.add_argument('-ed', '--endLabel', default='TES',
-        help='end label, default: [TES]')
+    # parser.add_argument('-sl', '--samplesLabel', nargs='+', default=None,
+    #     help='labels for samples in plot, default: [None] auto')
+    # parser.add_argument('-st', '--startLabel', default='TSS',
+    #     help='start label, default: [TSS]')
+    # parser.add_argument('-ed', '--endLabel', default='TES',
+    #     help='end label, default: [TES]')
     return parser
 
 
@@ -78,7 +80,7 @@ def add_io_parser(parser):
     if not isinstance(parser, argparse.ArgumentParser):
         log.error('unknown parser')
         return parser
-    parser.add_argument('-b', dest='bam_list', required=True,
+    parser.add_argument('-b', dest='bam_list', nargs='+', required=True,
         help='bam files')
     parser.add_argument('-o', dest='out_dir', required=False,
         help='directory to save bigWig file')
@@ -105,12 +107,12 @@ def add_bam_parser(parser):
     parser.add_argument('-n', '--normalizeUsing', default='None',
         choices=['RPKM', 'CPM', 'BPM', 'RPGC', 'None'],
         help='Use one of the method to normalize reads, default: [None]')
-    parser.add_argument('--extendReads', type=int, default=None,
+    parser.add_argument('-ex', '--extendReads', type=int, default=None,
         help='extend PE reads to fragment size')
-    parser.add_argument('--centerReads', action='store_true',
+    parser.add_argument('-ce', '--centerReads', action='store_true',
         help='reads are centered with respect to the fragment length')
     parser.add_argument('-sm', '--smoothLength', type=int, default=None,
-        help='smoothlength')
+        help='smooth length')
     parser.add_argument('-fs', '--filterRNAstrand', default=None,
         help='filt RNA strand, forward or reverse')
     return parser
