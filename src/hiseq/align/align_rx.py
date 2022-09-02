@@ -45,7 +45,7 @@ class AlignRx(object):
             'smp_name': None,
         }
         self = update_obj(self, args_init, force=False)
-        self.hiseq_type = 'alignment_rx'
+        self.hiseq_type = 'align_rx'
         if not isinstance(self.out_dir, str):
             self.out_dir = str(pathlib.Path.cwd())
         self.out_dir = file_abspath(self.out_dir)

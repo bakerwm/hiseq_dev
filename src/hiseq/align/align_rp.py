@@ -42,7 +42,7 @@ class AlignRp(object):
         if not a.is_hiseq:
             raise ValueError('project_dir not hiseq_dir: {}'.format(self.x))
         # check default files
-        self.hiseq_type = 'alignment_rp'
+        self.hiseq_type = 'align_rp'
         self.report_dir = os.path.join(self.project_dir, 'report')
         self.config_yaml = os.path.join(self.report_dir, 'config.yaml')
         self.report_html = os.path.join(self.report_dir, 'HiSeq_report.html')

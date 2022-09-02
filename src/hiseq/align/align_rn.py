@@ -40,7 +40,7 @@ class AlignRn(object):
             'out_dir': None,
         }
         self = update_obj(self, args_init, force=False)
-        self.hiseq_type = 'alignment_rn'
+        self.hiseq_type = 'align_rn'
         if not isinstance(self.out_dir, str):
             self.out_dir = str(pathlib.Path.cwd())
         self.out_dir = file_abspath(self.out_dir)
