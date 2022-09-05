@@ -38,6 +38,12 @@ from hiseq.sample.sample import get_args as add_sample_args
 from hiseq.bam2bw.bam2bw import Bam2bw
 from hiseq.bam2bw.bam2bw import get_args as add_bam2bw_args
 
+from hiseq.qc.base_content import base_content
+from hiseq.qc.base_content import get_args as add_base_content_args
+
+from hiseq.align.align import Align
+from hiseq.align.align import get_args as add_align_args
+
 ## pipeline
 from hiseq.atac.atac import get_args as add_atac_args
 from hiseq.atac.atac import Atac
@@ -46,8 +52,6 @@ from hiseq.atac.atac import Atac
 # from hiseq.qc.fastqc import Fastqc
 # from hiseq.qc.fastqc import get_args as add_fastqc_args
 
-# from hiseq.align.align import Align
-# from hiseq.align.align import get_args as add_align_args
 
 # from hiseq.qc.hiseq_lib import HiseqLib, HiseqLibSmRNA
 # from hiseq.qc.hiseq_lib import get_args as add_p7_args
@@ -191,6 +195,17 @@ class Hiseq(object):
         Bam2bw(**args).run()
 
 
+    def basecontent(self):
+        args = self.init_args(add_base_content_args())
+        base_content(**args)
+
+
+    def align(self):
+        args = self.init_args(add_align_args())
+        Align(**args).run()
+
+
+
 # pipeline
     def atac(self):
         args = self.init_args(add_atac_args())
@@ -249,14 +264,6 @@ class Hiseq(object):
 #         """
 #         args = self.init_args(add_trim_args())
 #         Trim(**args).run()
-
-
-#     def align(self):
-#         """
-#         Align reads
-#         """
-#         args = self.init_args(add_align_args())
-#         Align(**args).run()
 
 
 #     def bam2cor(self):
