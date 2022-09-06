@@ -29,6 +29,9 @@ from hiseq.demx.demx import get_args as add_demx_args
 from hiseq.demx.demx2 import Demx2
 from hiseq.demx.demx2 import get_args as add_demx2_args
 
+from hiseq.qc.fastqc import FastQC
+from hiseq.qc.fastqc import get_args as add_fastqc_args
+
 from hiseq.trim.trim import Trim
 from hiseq.trim.trim import get_args as add_trim_args
 
@@ -38,7 +41,7 @@ from hiseq.sample.sample import get_args as add_sample_args
 from hiseq.bam2bw.bam2bw import Bam2bw
 from hiseq.bam2bw.bam2bw import get_args as add_bam2bw_args
 
-from hiseq.qc.base_content import base_content
+from hiseq.qc.base_content import BaseContent
 from hiseq.qc.base_content import get_args as add_base_content_args
 
 from hiseq.align.align import Align
@@ -49,8 +52,6 @@ from hiseq.atac.atac import get_args as add_atac_args
 from hiseq.atac.atac import Atac
 
 
-# from hiseq.qc.fastqc import Fastqc
-# from hiseq.qc.fastqc import get_args as add_fastqc_args
 
 
 # from hiseq.qc.hiseq_lib import HiseqLib, HiseqLibSmRNA
@@ -184,6 +185,10 @@ class Hiseq(object):
         args = self.init_args(add_trim_args())
         Trim(**args).run()
 
+    def qc(self):
+        args = self.init_args(add_fastqc_args())
+        FastQC(**args).run()
+
 
     def sample(self):
         args = self.init_args(add_sample_args())
@@ -197,13 +202,12 @@ class Hiseq(object):
 
     def basecontent(self):
         args = self.init_args(add_base_content_args())
-        base_content(**args)
+        BaseContent(**args).run()
 
 
     def align(self):
         args = self.init_args(add_align_args())
         Align(**args).run()
-
 
 
 # pipeline
@@ -301,14 +305,6 @@ class Hiseq(object):
 #         BamFragSize(**args).run()
 
 
-
-
-#     def qc(self):
-#         """
-#         Fastq quality control
-#         """
-#         args = self.init_args(add_fastqc_args())
-#         Fastqc(**args).run()
 
 
 #     def hiseq_list(self):

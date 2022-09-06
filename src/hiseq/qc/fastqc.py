@@ -276,8 +276,9 @@ def get_args():
         help='Disable grouping of bases for reads >50bp')
     parser.add_argument('-H', '--skip-html', dest='skip_html', 
         action='store_true', help='Skip generating HTML file')
-    parser.add_argument('-c', '--cmd', default='falco',
-        help='Choose the FastQC tools, [falco, fastqc], default: [falco]')
+    parser.add_argument('-c', '--cmd', default='falco', 
+        choices=['falco', 'fastqc', 'auto'],
+        help='Choose the FastQC tools, [falco, fastqc], default: [auto]')
     parser.add_argument('--falco', default='falco',
         help='Specify the path of Falco, default: [falco]')
     parser.add_argument('--fastqc', default='fastqc',

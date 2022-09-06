@@ -14,6 +14,7 @@ Date: 2022-08-31
 
 import os
 import pathlib
+import re
 import shutil
 import argparse
 import json
@@ -23,11 +24,13 @@ import plotly.express as px
 from hiseq.qc.read_fastqc import ReadFastQC
 from multiprocessing import Pool
 from hiseq.utils.utils import log, update_obj, Config, run_shell_cmd
+from hiseq.utils.file import fix_out_dir
+from hiseq.utils.seq import fx_name
 
 
-class BaseContent(object):
+class BaseContentR1(object):
     """
-    Check Per Base Content for fastq file
+    Check Per Base Content for single fastq file
     using: FastQC or Falco
     """
     def __init__(self, fq, **kwargs):
@@ -45,19 +48,21 @@ class BaseContent(object):
             'rm_tmp': False,
         }
         self = update_obj(self, args, force=False)
-        if not isinstance(self.out_dir, str):
-            self.out_dir = str(pathlib.Path.cwd())
-        if not os.path.exists(self.out_dir):
-            os.makedirs(self.out_dir)
-        name = os.path.basename(self.fq)
-        if name.endswith('.gz'):
-            name = name[:-3] # remove ".gz"
-        name = os.path.splitext(name)[0] # remove '.fq'
-        self.name = name
-        self.out_txt = os.path.join(self.out_dir, name+'_fastqc_data.txt')
-        self.out_json = os.path.join(self.out_dir, name+'_fastqc_data.json')
-        self.out_png = os.path.join(self.out_dir, name+'_basecontent.png')
-        self.plot_json = os.path.join(self.out_dir, name+'_basecontent.json')
+        # if not isinstance(self.out_dir, str):
+        #     self.out_dir = str(pathlib.Path.cwd())
+        # if not os.path.exists(self.out_dir):
+        #     os.makedirs(self.out_dir)
+        self.out_dir = fix_out_dir(self.out_dir)
+        # name = os.path.basename(self.fq)
+        # if name.endswith('.gz'):
+        #     name = name[:-3] # remove ".gz"
+        # name = os.path.splitext(name)[0] # remove '.fq'
+        # self.name = name
+        self.name = fx_name(self.fq, fix_pe=True)
+        self.out_txt = os.path.join(self.out_dir, self.name+'_fastqc_data.txt')
+        self.out_json = os.path.join(self.out_dir, self.name+'_fastqc_data.json')
+        self.out_png = os.path.join(self.out_dir, self.name+'_basecontent.png')
+        self.plot_json = os.path.join(self.out_dir, self.name+'_basecontent.json')
 
 
     def get_df(self):
@@ -228,6 +233,60 @@ class BaseContent(object):
                     os.remove(i)
 
 
+class BaseContent(object):
+    def __init__(self, **kwargs):
+        self = update_obj(self, kwargs, force=True)
+        # self.fq = fq
+        self.init_args()
+
+
+    def init_args(self):
+        args = {
+            'fq': None,
+            'out_dir': None,
+            'left_end': 0,
+            'parallel_jobs': 1,
+            'overwrite': False,
+            'rm_tmp': False,
+        }
+        self = update_obj(self, args, force=False)
+        self.out_dir = fix_out_dir(self.out_dir)
+        self.init_fq()
+
+
+    def init_fq(self):
+        if isinstance(self.fq, str):
+            self.fq = [self.fq]
+        # check if fq exists
+        if isinstance(self.fq, list):
+            self.fq = [i for i in self.fq if self.is_fastq(i)]
+
+
+    def is_fastq(self, x):
+        if isinstance(x, str):
+            p = re.compile('.f(ast)?q(.gz)?$', flags=re.IGNORECASE)
+            return isinstance(p.search(x), re.Match)
+        elif isinstance(x, list):
+            # return [self.is_fastq(i) for i in x]
+            return list(map(self.is_fastq, x))
+        else:
+            return False
+
+
+    def run_single_fx(self, i):
+        args = self.__dict__.copy()
+        args.pop('fq', []) # remove fq from args
+        BaseContentR1(i, **args).run()
+
+
+    def run(self):
+        if len(self.fq) > 1 and self.parallel_jobs > 1:
+            with Pool(processes=self.parallel_jobs) as pool:
+                pool.map(self.run_single_fx, self.fq)
+        else:
+            [self.run_single_fx(i) for i in self.fq]
+
+
 def base_content(**kwargs):
     # default args
     args = {
@@ -282,7 +341,7 @@ def get_args():
 
 def main():
     args = vars(get_args().parse_args())
-    base_content(**args)
+    BaseContent(**args).run()
 
 
 if __name__ == '__main__':
