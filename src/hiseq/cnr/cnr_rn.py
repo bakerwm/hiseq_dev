@@ -19,6 +19,7 @@ from hiseq.utils.seq import check_fx_paired, fx_name, check_fx_args
 from hiseq.utils.hiseq_utils import list_hiseq_file
 from hiseq.utils.genome import Genome
 from hiseq.align.align_index import AlignIndex, check_index_args
+from hiseq.cnr.cnr_args import get_args_fast
 from hiseq.atac.atac_args import get_args_atac_rn
 from hiseq.atac.atac_files import get_atac_dirs, get_atac_files
 from hiseq.atac.atac_utils import (
@@ -173,7 +174,8 @@ class CnrRnConfig(object):
 
 
 def get_args():
-    return get_args_atac_rn()
+    parser = get_args_atac_rn()
+    return get_args_fast(parser)
 
 
 def main():

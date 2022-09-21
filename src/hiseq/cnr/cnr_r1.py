@@ -34,6 +34,7 @@ from hiseq.align.align_index import AlignIndex, check_index_args
 from hiseq.utils.utils import log, update_obj, Config, init_cpu
 from hiseq.utils.file import check_dir, symlink_file, file_abspath, fix_out_dir
 from hiseq.utils.seq import check_fx_paired, fx_name, check_fx_args
+from hiseq.cnr.cnr_args import get_args_fast
 from hiseq.atac.atac_args import get_args_atac_r1 #, get_args_index1, get_args_atac1
 from hiseq.atac.atac_files import get_atac_dirs, get_atac_files
 from hiseq.atac.atac_utils import (
@@ -180,7 +181,8 @@ class CnrR1Config(object):
 
 
 def get_args():
-    return get_args_atac_r1()
+    parser = get_args_atac_r1()
+    return get_args_fast(parser)
 
 
 def main():

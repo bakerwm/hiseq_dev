@@ -173,7 +173,7 @@ def get_args_opt(parser):
         help='trim adapter recursively')
     # optional further
     parser.add_argument('--binSize', dest='bin_size', default=50, type=int,
-        help='binSize for downstream analysis')
+        help='binSize for downstream analysis, default [50]')
     parser.add_argument('--keep-dup', dest='rm_dup', action='store_false',
         help='keep duplicates')
     parser.add_argument('--keep-temp', dest='keep_temp', action='store_false',

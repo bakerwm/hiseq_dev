@@ -1,20 +1,29 @@
 #!/usr/bin/env python3
 # -*- coding:utf-8 -*-
 
+import re
 import argparse
 from hiseq.atac.atac_args import get_args_index1, get_args_opt
 
 
 def get_args_cnr():
     parser = get_args_io4()
+    # parser = get_args_fast(parser)
     parser = get_args_index1(parser)
     return get_args_opt(parser)
 
 
 def get_args_cnr_rx():
     parser = get_args_io3()
+    # parser = get_args_fast(parser)
     parser = get_args_index1(parser)
     return get_args_opt(parser)
+
+
+def get_args_fast(parser):
+    parser.add_argument('--fast', dest='fast_mode', action='store_true',
+        help='run in fast mode, for a quick look of the data')
+    return parser
 
 
 def get_args_io3():
@@ -30,14 +39,14 @@ def get_args_io3():
         description='cnr: for single group: (ip vs input)',
         epilog=example,
         formatter_class=argparse.RawTextHelpFormatter)
-    parser.add_argument('--ip-fq1', nargs='+', dest='ip_fq1', default=None,
-        help='first read of IP fastq file, or se')
-    parser.add_argument('--ip-fq2', nargs='+', dest='ip_fq2', default=None,
+    parser.add_argument('-q1', '--ip-fq1', nargs='+', dest='ip_fq1', default=None, 
+        required=True, help='first read of IP fastq file, or se')
+    parser.add_argument('-q2', '--ip-fq2', nargs='+', dest='ip_fq2', default=None,
         help='second read of IP fastq file, or None')
-    parser.add_argument('--input-fq1', nargs='+', dest='input_fq1', 
+    parser.add_argument('-Q1', '--input-fq1', nargs='+', dest='input_fq1', 
         default=None,
         help='first read of Input fastq file, or SE')
-    parser.add_argument('--input-fq2', nargs='+', dest='input_fq2',
+    parser.add_argument('-Q2', '--input-fq2', nargs='+', dest='input_fq2',
         default=None,
         help='second read of IP fastq file, or None')
     parser.add_argument('--ip-name', dest='ip_name', default=None,

@@ -13,19 +13,14 @@ import os
 from multiprocessing import Pool
 from hiseq.utils.genome import Genome
 from hiseq.align.align_index import AlignIndex, check_index_args
-from hiseq.utils.file import check_dir, file_abspath, file_exists, fix_out_dir, symlink_file
+from hiseq.utils.file import check_dir, fix_out_dir, symlink_file
 from hiseq.utils.seq import check_fx_args, fx_name
-from hiseq.utils.utils import log, update_obj, Config, get_date, init_cpu
+from hiseq.utils.utils import log, update_obj, Config
 from hiseq.utils.hiseq_utils import list_hiseq_file, read_hiseq
 from hiseq.atac.atac_files import get_atac_dirs, get_atac_files
-from hiseq.atac.atac_utils import (
-    hiseq_merge_trim, hiseq_merge_bam, hiseq_copy_r1, hiseq_call_peak, 
-    hiseq_bam2bw, hiseq_pcr_dup, hiseq_bw_compare
-)
+from hiseq.atac.atac_utils import hiseq_call_peak, hiseq_bw_compare
 from hiseq.atac.atac_qc import (
-    qc_trim_summary, qc_align_summary, qc_lendist, qc_frip, 
-    qc_tss_enrich, qc_genebody_enrich, qc_bam_cor, qc_peak_idr, 
-    qc_peak_overlap, qc_bam_fingerprint
+    qc_tss_enrich, qc_genebody_enrich, qc_bam_cor, qc_bam_fingerprint
 )
 from hiseq.cnr.cnr_args import get_args_cnr_rx
 from hiseq.cnr.cnr_rn import CnrRn
@@ -115,7 +110,6 @@ class CnrRx(object):
         # 3. generate report
         HiSeqRpt(self.project_dir, overwrite=self.overwrite).run()
 
-
 class CnrRxConfig(object):
     def __init__(self, **kwargs):
         self = update_obj(self, kwargs, force=True)
@@ -143,18 +137,19 @@ class CnrRxConfig(object):
         self.init_index()
         self.init_name()
         self.init_files()
-    
-    
-    # update: genome_size_file    
+
+
     def init_index(self):
-        # get data from: genome, extra_index
+        index_list = check_index_args(**self.__dict__)
+        if len(index_list) == 0:
+            raise ValueError('no index found')
+        # update: genome_size_file
         if isinstance(self.extra_index, str):
             self.genome_size_file = AlignIndex(self.extra_index).index_size(out_file=True)
         elif isinstance(self.genome, str):
-            self.genome_size_file = Genome(self.genome).fasize()
+            self.genome_size_file = Genome(self.genome).fai
         else:
             raise ValueError('--genome or --extra-index; required')
-        # update genome_size
         gs = 0
         with open(self.genome_size_file) as r:
             for line in r:
@@ -187,7 +182,7 @@ class CnrRxConfig(object):
         self.project_name = self.smp_name
         self.project_dir = os.path.join(self.out_dir, self.smp_name)
         atac_dirs = get_atac_dirs(self.out_dir, self.smp_name)
-        atac_files = get_atac_files(self.out_dir, self.smp_name, self.fq1, self.fq2)
+        atac_files = get_atac_files(self.out_dir, self.smp_name, self.ip_fq1, self.ip_fq2)
         self = update_obj(self, atac_dirs, force=True)
         self = update_obj(self, atac_files, force=True)
         cnr_files = {

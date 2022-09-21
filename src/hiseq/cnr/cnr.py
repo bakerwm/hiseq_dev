@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding:utf-8 -*-
+
 """
 CnR pipeline: level-1 (main port)
-
 mission-1: generate design.toml
-
 mission-2: run_pipe, parsing config from design.toml
 """
 
@@ -12,65 +11,58 @@ import os
 import pathlib
 import argparse
 from multiprocessing import Pool
-from hiseq.cnr.cnr_rd import CnrRd
+from hiseq.utils.hiseq_utils import HiSeqDesignCnr
+from hiseq.utils.file import fix_out_dir
 from hiseq.cnr.cnr_rx import CnrRx
-from hiseq.utils.file import check_dir, symlink_file, file_abspath
-from hiseq.utils.utils import log, update_obj, Config, get_date, init_cpu
-
+from hiseq.cnr.cnr_args import get_args_cnr
+from hiseq.utils.utils import Config, update_obj, log
 
 
 class Cnr(object):
     def __init__(self, **kwargs):
         self = update_obj(self, kwargs, force=True)
-        self.init_args()
 
 
-    def init_args(self):
-        args_local = CnrConfig(**self.__dict__)
-        self = update_obj(self, args_local.__dict__, force=True)
-
-
-    def run_rd(self):
-        CnrRd(**self.__dict__).run()
-        
-
-    def run_single_rx(self, i):
-        i = {
-            k:v for k,v in i.items() if k in \
-            ['ip_fq1', 'ip_fq2', 'input_fq1', 'input_fq2']
-        }
-        i.update({
-        'build_design': False,
-        'design': None,
-        })
+    def run_single_rx(self, x):
+        g = self.fq_groups.get(x, None) # input, ip
+        if not isinstance(g, dict):
+            log.error('error in design: {}'.format(x))
+            return None
+        # update ip, input
+        args = self.__dict__.copy()
+        # ip
+        g_ip = g.get('ip')
+        if isinstance(g_ip, dict):
+            args.update({
+                'build_design': False,
+                'ip_fq1': [v[0] for k,v in g_ip.items()],
+                'ip_fq2': [v[1] for k,v in g_ip.items()],
+            })
+        g_input = g.get('input')
+        if isinstance(g_input, dict):
+            args.update({
+                'input_fq1': [v[0] for k,v in g_input.items()],
+                'input_fq2': [v[1] for k,v in g_input.items()],
+            })
         if len(self.fq_groups) > 1:
-            i['parallel_jobs'] = 1 # force
-        args_local = self.__dict__.copy()
-        args_local.update(i)
-        CnrRx(**args_local).run()
+            args['parallel_jobs'] = 1 # force
+        CnrRx(**args).run()
 
 
-    def run_multiple_rx(self):
-        # load fq groups
-        self.fq_groups = Config().load(self.design)
-        if len(self.fq_groups) == 0:
-            raise ValueError('no data in design: {}'.format(self.design))
-        # run multiple in parallel
-        if self.parallel_jobs > 1 and len(self.fq_groups) > 1:
-            with Pool(processes=self.parallel_jobs) as pool:
-                pool.map(self.run_single_rx, self.fq_groups.values())
-        else:
-            for i in list(self.fq_groups.values()):
-                self.run_single_rx(i)
-        
-        
     def run(self):
         if self.build_design:
-            self.run_rd()
+            HiSeqDesignCnr(**self.__dict__).run()
         else:
-            # CnrRx(**self.__dict__).run() # Rx->Rn->R1
-            self.run_multiple_rx()
-            
+            self.fq_groups = Config().load(self.design)
+            if self.parallel_jobs > 1 and len(self.fq_groups) > 1:
+                with Pool(processes=self.parallel_jobs) as pool:
+                    pool.map(self.run_single_rx, self.fq_groups)
+            elif len(self.fq_groups) >= 1:
+                for i in list(self.fq_groups):
+                    self.run_single_rx(i)
+            else:
+                raise ValueError('no data found: {}'.format(self.design))
+
 
 class CnrConfig(object):
     def __init__(self, **kwargs):
@@ -85,94 +77,19 @@ class CnrConfig(object):
             'fq_dir': None,
             'ip': None, # str
             'input': None, # str
-            'ip_fq1': None,
-            'ip_fq2': None,
-            'threads': 1,
+            # 'threads': 1,
             'parallel_jobs': 1
         }
         self = update_obj(self, args_init, force=False)
         self.hiseq_type = 'cnr_ra'
-        if self.out_dir is None:
-            self.out_dir = str(pathlib.Path.cwd())
-        self.out_dir = file_abspath(self.outdir)
-        self.threads, self.parallel_jobs = init_cpu(self.threads,
-            self.parallel_jobs)
+        self.out_dir = fix_out_dir(self.out_dir)
         if not isinstance(self.design, str):
             raise ValueError('--design, expect str, got {}'.format(
                 type(self.design).__name__))
 
 
 def get_args():
-    """
-    Parsing arguments for cnr
-    """
-    example = '\n'.join([
-        'Examples:',
-        '1. Generate design.toml, with --fq-dir',
-        '$ python cnr.py -b -d design.toml --fq-dir data/raw_data --ip K9 --input IgG',
-        '2. Generate design.toml, with -1 and -2',
-        '$ python cnr_rd.py -b -d design.toml -1 *1.fq.gz -2 *2.fq.gz',
-        '3. Run pipeline for design.toml',
-        '$ python cnr.py -d design.toml -g dm6 -o results',
-        '4. Run pipeline, with different parameters',
-        '$ python cnr.py -d design.toml -g dm6 -o results --extra-index te',
-    ])
-    parser = argparse.ArgumentParser(
-        prog='cnr',
-        description='cnr: for multiple groups of PE reads',
-        epilog=example,
-        formatter_class=argparse.RawTextHelpFormatter)
-    parser.add_argument('-b', '--build-design', dest='build_design',
-        action='store_true',
-        help='generate design.toml, with --fq-dir, or fq1/fq2')
-    parser.add_argument('-d', '--design', required=True,
-        help='The file saving fastq files config; generated by cnr_rd.py')
-    parser.add_argument('-o', '--out_dir', default=None,
-        help='Directory saving results, default: [pwd]')
-    parser.add_argument('-g', '--genome', default=None,
-        choices=['dm3', 'dm6', 'hg19', 'hg38', 'mm9', 'mm10'],
-        help='Reference genome : dm3, dm6, hg19, hg39, mm9, mm10, default: dm6')
-    parser.add_argument('-x', '--extra-index', dest="extra_index",
-        help='Provide alignment index (bowtie2)')
-    parser.add_argument('--bed', '--gene-bed', dest='gene_bed', default=None,
-        help='The BED or GTF of genes, for TSS enrichment analysis')
-    parser.add_argument('--trimmed', action='store_true',
-        help='Skip trimming, input reads are already trimmed')
-    parser.add_argument('--cut', action='store_true', 
-        help='Cut reads to 50nt, equal to: --cut-to-length 50 --recursive')
-    
-    # for build-design
-    parser.add_argument('-r', '--fq-dir', dest='fq_dir', default=None,
-        help='directory of fastq files, for --build-design')
-    parser.add_argument('--ip', nargs='+', dest='ip', default=None,
-        help='keyword of IP fastq file, auto-find read1/2')
-    parser.add_argument('--input', nargs='+', dest='input', default=None,
-        help='keyword of Input fastq file, auto-find read1/2')
-    parser.add_argument('--ip-fq1', nargs='+', dest='ip_fq1', default=None,
-        help='filepath or keyword of IP fastq file, read1 of PE')
-    parser.add_argument('--ip-fq2', nargs='+', dest='ip_fq2', default=None,
-        help='filepath or keyword of IP fastq file, read2 of PE')
-    parser.add_argument('--input-fq1', nargs='+', dest='input_fq1', 
-        default=None,
-        help='filepath or keyword of Input fastq file, read1 of PE')
-    parser.add_argument('--input-fq2', nargs='+', dest='input_fq2',
-        default=None,
-        help='filepath or keyword of Input fastq file, read2 of PE')
-    # for global
-    parser.add_argument('-p', '--threads', default=1, type=int,
-        help='Number of threads to launch, default [1]')
-    parser.add_argument('-j', '--parallel-jobs', dest='parallel_jobs',
-        default=1, type=int,
-        help='Number of jobs run in parallel, default: [1]')
-    parser.add_argument('--overwrite', action='store_true',
-        help='if spcified, overwrite exists file')
-    # for trimming
-    parser.add_argument('--cut-to-length', dest='cut_to_length',
-        default=0, type=int,
-        help='cut reads to specific length from tail, default: [0]')
-    parser.add_argument('--recursive', action='store_true',
-        help='trim adapter recursively')
-    return parser
+    return get_args_cnr()
 
 
 def main():

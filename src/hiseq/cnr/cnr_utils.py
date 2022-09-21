@@ -17,11 +17,11 @@ import hiseq
 from hiseq.trim.trimmer import TrimR1
 from hiseq.align.align import Align
 from hiseq.bam2bw.bam2bw import Bam2bw, bw_compare
-from hiseq.cnr.callpeak import CallPeak
+from hiseq.callpeak.callpeak import CallPeak
 from hiseq.fragsize.fragsize import BamFragSize, BamFragSizeR1
 from hiseq.utils.file import (
-    list_file, list_dir, check_file, check_dir, copy_file, copy_dir, symlink_file,
-    remove_file, fx_name, file_exists, file_abspath, file_prefix, file_nrows
+    list_dir, check_file, check_dir, copy_file, copy_dir, symlink_file,
+    file_exists, file_nrows
 )
 from hiseq.utils.bam import Bam, Bam2cor, Bam2fingerprint
 from hiseq.utils.bed import PeakIDR, BedOverlap, PeakFRiP
