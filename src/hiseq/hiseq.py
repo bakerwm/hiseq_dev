@@ -51,7 +51,8 @@ from hiseq.align.align import get_args as add_align_args
 from hiseq.atac.atac import get_args as add_atac_args
 from hiseq.atac.atac import Atac
 
-
+from hiseq.cnr.cnr import get_args as add_cnr_args
+from hiseq.cnr.cnr import Cnr
 
 
 # from hiseq.qc.hiseq_lib import HiseqLib, HiseqLibSmRNA
@@ -216,12 +217,9 @@ class Hiseq(object):
         Atac(**args).run()
 
 
-#     def cnr(self):
-#         """
-#         CUN&RUN pipeline
-#         """
-#         args = self.init_args(add_cnr_args())
-#         Cnr(**args).run()
+    def cnr(self):
+        args = self.init_args(add_cnr_args())
+        Cnr(**args).run()
 
 
 #     def hiseq_merge(self):
