@@ -315,7 +315,7 @@ class HiSeqReader(object):
         out = None
         for f in c_files:
             c1 = os.path.join(self.x, 'config', f)
-            c2 = os.path.join(self.x, '*', '*', f)
+            c2 = os.path.join(self.x, '*', f) # !!! only level-1
             c1x = glob.glob(c1)
             c2x = glob.glob(c2)
             if len(c1x) > 0:
