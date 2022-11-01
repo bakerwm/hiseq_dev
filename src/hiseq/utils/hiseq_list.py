@@ -127,7 +127,7 @@ def get_args():
         help='search the directories recursively')
     parser.add_argument('-a', '--abspath', action='store_true',
         help='return the absolute path')
-    parser.add_argument('-O', '--overwrite', dest='overwrite',
+    parser.add_argument('-f', '--force', dest='overwrite',
         action='store_true', help='overwrite exists output json file')
     return parser
 

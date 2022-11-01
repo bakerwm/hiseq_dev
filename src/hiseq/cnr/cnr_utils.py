@@ -14,9 +14,10 @@ import glob
 import shutil
 import pysam
 import hiseq
-from hiseq.trim.trimmer import TrimR1
+from hiseq.trim.trim_r1 import TrimR1
 from hiseq.align.align import Align
-from hiseq.bam2bw.bam2bw import Bam2bw, bw_compare
+from hiseq.bam2bw.bam2bw import Bam2bw
+from hiseq.utils.bw import bw_compare
 from hiseq.callpeak.callpeak import CallPeak
 from hiseq.fragsize.fragsize import BamFragSize, BamFragSizeR1
 from hiseq.utils.file import (
@@ -26,10 +27,10 @@ from hiseq.utils.file import (
 from hiseq.utils.bam import Bam, Bam2cor, Bam2fingerprint
 from hiseq.utils.bed import PeakIDR, BedOverlap, PeakFRiP
 from hiseq.utils.utils import (
-    log, update_obj, Config, get_date, read_hiseq, list_hiseq_file,
-    is_hiseq_dir,
+    log, update_obj, Config, get_date,
     run_shell_cmd, find_longest_common_str, hash_string, check_hash_string
 )
+from hiseq.utils.hiseq_utils import read_hiseq, list_hiseq_file, is_hiseq_dir
 
 
 def hiseq_norm_scale(x, hiseq_type='_r1', by_spikein=False, norm=1000000):
@@ -1108,11 +1109,12 @@ def copy_hiseq_qc(x, hiseq_type='_merge'):
         path to the directory, saving files
     """
     log.info('copy hiseq qc files ...')
-    key_list = ['config_yaml', 'report_html', 'trim_summary_json',
-        'align_summary_json',
+    key_list = [
+        'config_yaml', 'report_html', 'trim_summary_json', 'align_summary_json',
         'dup_summary_json', 'frip_json', 'lendist_csv', 'tss_enrich_png',
         'genebody_enrich_png', 'peak_overlap_png', 'bam_cor_heatmap_png',
-        'bam_cor_pca_png']
+        'bam_cor_pca_png'
+    ]
     a = read_hiseq(x, hiseq_type) # for general usage
     hiseq_list = list_hiseq_file(x, 'hiseq_list', 'auto')
     # copy files to project_dir/data/
@@ -1121,9 +1123,9 @@ def copy_hiseq_qc(x, hiseq_type='_merge'):
             continue # skip
         b = read_hiseq(s)
         src_name = list_hiseq_file(s, 'smp_name', 'auto')
-        src_out_dir = list_hiseq_file(s, 'outdir', 'auto')
+        src_out_dir = list_hiseq_file(s, 'out_dir', 'auto')
         src_name = getattr(b, 'smp_name', None) #
-        src_out_dir = getattr(b, 'outdir', None) #
+        src_out_dir = getattr(b, 'out_dir', None) #
         src_tag = hash_string(src_out_dir)[:7] # first-7-character
         for key in key_list:
             src_file = list_hiseq_file(s, key, b.hiseq_type)

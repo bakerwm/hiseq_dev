@@ -47,8 +47,11 @@ from hiseq.qc.base_content import get_args as add_base_content_args
 from hiseq.align.align import Align
 from hiseq.align.align import get_args as add_align_args
 
-from hiseq.utils.hiseq_list import hiseq_list, list_dirs
+from hiseq.utils.hiseq_list import hiseq_list
 from hiseq.utils.hiseq_list import get_args as add_hiseq_list_args
+
+from hiseq.merge.hiseq_merge import HiSeqMerge
+from hiseq.merge.hiseq_merge import get_args as add_hiseq_merge_args
 
 ## pipeline
 from hiseq.atac.atac import get_args as add_atac_args
@@ -217,6 +220,11 @@ class Hiseq(object):
         out = hiseq_list(args.pop('x', None), **args)
 
 
+    def hiseq_merge(self):
+        args = self.init_args(add_hiseq_merge_args())
+        HiSeqMerge(**args).run()
+
+
 # pipeline
     def atac(self):
         args = self.init_args(add_atac_args())
@@ -226,14 +234,6 @@ class Hiseq(object):
     def cnr(self):
         args = self.init_args(add_cnr_args())
         Cnr(**args).run()
-
-
-#     def hiseq_merge(self):
-#         """
-#         Merge multiple hiseq dirs
-#         """
-#         args = self.init_args(add_hiseq_merge_args())
-#         CnrMerge(**args).run()
 
 
 #     def chipseq(self):
