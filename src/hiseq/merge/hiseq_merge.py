@@ -119,7 +119,7 @@ def get_args():
     example = '\n'.join([
         'Examples:',
         '1. Organize multiple hiseq dirs (cnr)',
-        '$ python hiseq_merge.py -o ',
+        '$ python hiseq_merge.py -i hiseq_file.txt -o results -n CnT_merge',
     ])
     parser = argparse.ArgumentParser(
         prog='hiseq_merge',
