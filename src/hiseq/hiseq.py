@@ -47,6 +47,9 @@ from hiseq.qc.base_content import get_args as add_base_content_args
 from hiseq.align.align import Align
 from hiseq.align.align import get_args as add_align_args
 
+from hiseq.utils.hiseq_list import hiseq_list, list_dirs
+from hiseq.utils.hiseq_list import get_args as add_hiseq_list_args
+
 ## pipeline
 from hiseq.atac.atac import get_args as add_atac_args
 from hiseq.atac.atac import Atac
@@ -64,8 +67,6 @@ from hiseq.cnr.cnr import Cnr
 # from hiseq.fragsize.fragsize import BamFragSize
 # from hiseq.fragsize.fragsize import get_args as add_fragsize_args
 
-# from hiseq.utils.hiseq_list import hiseq_list, list_dirs
-# from hiseq.utils.hiseq_list import get_args as add_hiseq_list_args
 
 # # from hiseq.qc.parse_i7 import HiSeqP7
 # # from hiseq.qc.parse_i7 import get_args as add_p7_args
@@ -211,6 +212,11 @@ class Hiseq(object):
         Align(**args).run()
 
 
+    def hiseq_list(self):
+        args = self.init_args(add_hiseq_list_args())
+        out = hiseq_list(args.pop('x', None), **args)
+
+
 # pipeline
     def atac(self):
         args = self.init_args(add_atac_args())
@@ -305,12 +311,6 @@ class Hiseq(object):
 
 
 
-#     def hiseq_list(self):
-#         args = self.init_args(add_hiseq_list_args())
-#         dirs = args.pop('dirs', None)
-#         dirs = list_dirs(dirs) # update, root/subdir
-#         out = hiseq_list(dirs, **args)
-#         print('\n'.join(out))
 
 
 #     def p7(self):
