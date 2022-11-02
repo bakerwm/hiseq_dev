@@ -140,7 +140,7 @@ def hiseq_align_spikein(x, hiseq_type='_r1'):
     else:
         Align(**args_align).run()
     # copy files; go to align_r1 directory
-    d_list = list_dir(a.spikein_dir, include_dir=True)
+    d_list = list_dir(a.spikein_dir, include_dirs=True)
     d_list = [i for i in d_list if os.path.isdir(i)]
     for i in d_list:
         t = read_hiseq(i, 'alignment_rn') # alignment_rn
@@ -367,11 +367,11 @@ def hiseq_copy_r1(x, hiseq_type='_rn'):
         # copy qc
         m_qc_dir = list_hiseq_file(x, 'qc_dir', 'rn') # dest
         r1_qc_dir = list_hiseq_file(r1_dir, 'qc_dir', 'r1')
-        r1_qc_files = list_dir(r1_qc_dir, include_dir=True) # update list_hiseq_file
+        r1_qc_files = list_dir(r1_qc_dir, include_dirs=True) # update list_hiseq_file
         for f in r1_qc_files:
             symlink_file(f, m_qc_dir) # to qc_dir
         # update: bam index
-        Bam(self.bam).index()
+        # Bam(self.bam).index()
 
 
 def hiseq_norm_scale(x, hiseq_type='_r1', by_spikein=False, norm=1000000):

@@ -215,12 +215,12 @@ class Hiseq(object):
         Align(**args).run()
 
 
-    def hiseq_list(self):
+    def list(self):
         args = self.init_args(add_hiseq_list_args())
         out = hiseq_list(args.pop('x', None), **args)
 
 
-    def hiseq_merge(self):
+    def merge(self):
         args = self.init_args(add_hiseq_merge_args())
         HiSeqMerge(**args).run()
 
@@ -239,7 +239,6 @@ class Hiseq(object):
 #     def chipseq(self):
 #         args = self.init_args(add_chipseq_args())
 #         Chipseq(**args).run()
-
 
 
 #     def rnaseq(self):
