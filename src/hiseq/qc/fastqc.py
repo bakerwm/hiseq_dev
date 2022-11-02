@@ -3,8 +3,8 @@
 
 """
 FastQC for fastq files, using Falco/FastQC
-1. Falco [https://github.com/smithlabcode/falco]
-2. FastQC [https://github.com/s-andrews/FastQC]
+1. Falco [https://github.com/smithlabcode/falco] # version 1.2.1, 2022-09-15
+2. FastQC [https://github.com/s-andrews/FastQC]  # version 0.11.9, 
 """
 
 import os
@@ -16,8 +16,10 @@ from multiprocessing import Pool
 from hiseq.qc.read_fastqc import ReadFastQC
 from hiseq.utils.seq import fx_name, list_fx
 from hiseq.utils.utils import update_obj, log, run_shell_cmd, Config, gen_random_string
-from hiseq.utils.file import file_exists, file_abspath, file_abspath, \
-    fix_out_dir, copy_file, remove_file, remove_dir, check_dir
+from hiseq.utils.file import (
+    file_exists, file_abspath, file_abspath, fix_out_dir, copy_file, remove_file,
+    remove_dir, check_dir
+)
 from hiseq.report.hiseq_report import HiSeqRpt
 
 
@@ -69,11 +71,11 @@ class FastQCR1(object):
     def run_falco(self):
         """
         options:
-        --outdir             Create all output files in the specified
-        --nogroup            Disable grouping of bases for reads >50bp
-        --skip-html          Skip generating HTML file
-        --skip-short-summary Skip short summary
-        --quiet              Do not print more run info
+        --outdir          Create all output files in the specified
+        --nogroup         Disable grouping of bases for reads >50bp
+        -skip-report       Skip generating HTML file
+        -skip-summary    Skip short summary
+        --quiet           Do not print more run info
         ## expect output
         out_dir/fastqc_data.txt
         out_dir/fastqc_reprot.html
@@ -86,8 +88,8 @@ class FastQCR1(object):
         cmd = ' '.join([
             self.falco,
             '{}'.format('--nogroup' if self.nogroup else ''),
-            '{}'.format('--skip-html' if self.skip_html else ''),
-            '--skip-short-summary --quiet',
+            '{}'.format('--skip-report' if self.skip_html else ''),
+            '-skip-summary --quiet',
             '--outdir {}'.format(tmp_out_dir),
             self.fq
         ])
@@ -95,6 +97,10 @@ class FastQCR1(object):
         if os.path.exists(self.out_json) and not self.overwrite:
             print('file exists: {}'.format(self.out_json))
         else:
+            # save command
+            cmd_txt = os.path.join(self.out_dir, f'{self.name}.falco.sh')
+            with open(cmd_txt, 'wt') as w:
+                w.write(cmd+'\n')
             try:
                 run_shell_cmd(cmd)
                 if os.path.exists(tmp_txt):
@@ -137,6 +143,9 @@ class FastQCR1(object):
         if os.path.exists(self.out_json) and not self.overwrite:
             print('file exists: {}'.format(self.out_json))
         else:
+            cmd_txt = os.path.join(self.out_dir, f'{self.name}.fastqc.sh')
+            with open(cmd_txt, 'wt') as w:
+                w.write(cmd+'\n')
             try:
                 check_dir(tmp_dir)
                 run_shell_cmd(cmd)
@@ -158,9 +167,16 @@ class FastQCR1(object):
             self.falco = which('falco')
         if not file_exists(self.fastqc) and self.is_tool('fastqc'):
             self.fastqc = which('fastqc')
-        out = self.run_falco if file_exists(self.falco) else \
-            self.run_fastqc if file_exists(self.fastqc) else None
-        if out is None:
+        # choose which falco or fastqc
+        if file_exists(self.falco) and self.cmd in ['falco', 'auto']:
+            out = self.run_falco
+        elif file_exists(self.fastqc) and self.cmd in ['fastqc', 'auto']:
+            out = self.run_fastqc
+        else:
+            out = None
+        # out = self.run_falco if file_exists(self.falco) else \
+        #     self.run_fastqc if file_exists(self.fastqc) else None
+        # if out is None:
             msg = '\n'.join(
                 '='*80,
                 'Required tool not found',
