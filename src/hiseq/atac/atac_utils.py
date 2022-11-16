@@ -133,6 +133,10 @@ def hiseq_align_spikein(x, hiseq_type='_r1'):
         'extra_index': None,
         'max_fragment': 2000,
         'extra_para': align_extra,
+        'threads': a.threads,
+        'parallel_jobs': a.parallel_jobs,
+        'overwrite': a.overwrite,
+        'verbose': False,
     }
     if file_exists(a.spikein_bam) and not a.overwrite:
         log.info('hiseq_align_spikein() skipped, file exists: {}'.format(
@@ -217,6 +221,10 @@ def hiseq_align_genome(x, hiseq_type='_r1'):
         'extra_index': None,
         'max_fragment': 2000,
         'extra_para': align_extra,
+        'threads': a.threads,
+        'parallel_jobs': a.parallel_jobs,
+        'overwrite': a.overwrite,
+        'verbose': False,
     }
     if file_exists(a.spikein_bam) and not a.overwrite:
         log.info('hiseq_align_spikein() skipped, file exists: {}'.format(
