@@ -105,15 +105,19 @@ class BaseContentR1(object):
         options:
         --outdir             Create all output files in the specified
         --nogroup            Disable grouping of bases for reads >50bp
-        --skip-html          Skip generating HTML file
-        --skip-short-summary Skip short summary
+        ## falco version before 1.2.1
+        # --skip-html          Skip generating HTML file
+        # --skip-short-summary Skip short summary
+        ## falco version 1.2.1
+        -skip-report         [Falco only] Do not create FastQC report HTML file.
+        -skip-summary        [Falco only] Do not create FastQC summary file
         --quiet              Do not print more run info
         ## expect output
         out_dir/fastqc_data.txt
         """
         cmd = ' '.join([
             which('falco'),
-            '--nogroup --skip-html --skip-short-summary --quiet',
+            '--nogroup -skip-report -skip-summary --quiet',
             '--outdir {}'.format(self.out_dir),
             self.fq
         ])

@@ -91,8 +91,8 @@ class DemxR1(object):
         # out_dir
         if not isinstance(self.out_dir, str):
             self.out_dir = str(pathlib.Path.cwd())
-        if self.demo:
-            self.out_dir = os.path.join(self.out_dir, 'demo')
+        # if self.demo:
+        #     self.out_dir = os.path.join(self.out_dir, 'demo')
         if not self.mismatch in range(4):
             raise ValueError('illegal mismatch: [{}], expect [0,1,2,3]'.format(
                 self.mismatch))
