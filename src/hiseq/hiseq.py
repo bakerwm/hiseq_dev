@@ -44,6 +44,9 @@ from hiseq.bam2bw.bam2bw import get_args as add_bam2bw_args
 from hiseq.qc.base_content import BaseContent
 from hiseq.qc.base_content import get_args as add_base_content_args
 
+from hiseq.run_trackhub.run_trackhub import TrackHub
+from hiseq.run_trackhub.run_trackhub import get_args as add_run_trackhub_args
+
 from hiseq.align.align import Align
 from hiseq.align.align import get_args as add_align_args
 
@@ -209,6 +212,9 @@ class Hiseq(object):
         args = self.init_args(add_base_content_args())
         BaseContent(**args).run()
 
+    def run_trackhub(self):
+        args = self.init_args(add_run_trackhub_args())
+        TrackHub(**args).run()
 
     def align(self):
         args = self.init_args(add_align_args())
@@ -332,12 +338,6 @@ class Hiseq(object):
 #         Kraken2(**args).run()
 
 
-#     def run_trackhub(self):
-#         """
-#         Make trackhub
-#         """
-#         args = self.init_args(add_trackhub_args())
-#         TrackHub(**args).run()
 
 
 # ################################################################################

@@ -22,7 +22,7 @@ from hiseq.utils.file import check_file, symlink_file, file_exists, list_dir
 from hiseq.utils.utils import log, Config, run_shell_cmd
 from hiseq.utils.hiseq_utils import read_hiseq, list_hiseq_file, is_hiseq_dir
 from hiseq.align.align_index import check_index_args
-from hiseq.utils.tmp import bw_compare
+from hiseq.utils.bw import bw_compare
 
 
 """

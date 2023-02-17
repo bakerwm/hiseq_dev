@@ -29,7 +29,9 @@ from hiseq.utils.utils import (
     log, Config, run_shell_cmd, find_longest_common_str, hash_string
 )
 from hiseq.utils.hiseq_utils import read_hiseq, list_hiseq_file, is_hiseq_dir
-from hiseq.utils.tmp import Bam2cor, Bam2fingerprint,  PeakIDR, BedOverlap, PeakFRiP
+
+from hiseq.utils.bam import Bam, Bam2cor, Bam2fingerprint
+from hiseq.utils.bed import PeakIDR, BedOverlap, PeakFRiP
 from hiseq.atac.atac_utils import get_mito_count
 
 
