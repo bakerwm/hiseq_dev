@@ -190,8 +190,8 @@ def hiseq_align_genome(x, hiseq_type='_r1'):
         'spikein_index': None,
         'to_MT': False, # on genome
         'to_chrM': False, # on genome
-        'to_te': True, # false, if available !!! force
-        'to_piRC': True, # false, if available !!! force
+        'to_te': False, # false, if available !!! force
+        'to_piRC': False, # false, if available !!! force
         'extra_index': a.extra_index,
         'index_list': a.index_list, # optional ???
     }
