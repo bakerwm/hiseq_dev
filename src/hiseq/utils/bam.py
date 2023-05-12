@@ -28,9 +28,12 @@ import tempfile
 import numpy as np
 import pysam
 import pybedtools
+import shutil
+import pathlib
+import re
 from shutil import which
-from hiseq.utils.utils import log, update_obj, run_shell_cmd
-from hiseq.utils.file import check_dir, check_file, file_exists
+from hiseq.utils.utils import log, update_obj, run_shell_cmd, Config
+from hiseq.utils.file import check_dir, check_file, file_exists, file_abspath, file_prefix, list_file, read_file
 
 
 class Bam(object):
@@ -154,7 +157,7 @@ class Bam(object):
         if outfile is None:
             outfile = os.path.splitext(self.bam)[0] + '.proper_pair.bam'
         if os.path.exists(outfile) and overwrite is False:
-            logging.info('file exists: {}'.format(outfile))
+            log.info('file exists: {}'.format(outfile))
         else:
             pysam.view('-f', '2', '-h', '-b', '-@', str(self.threads),
                 '-o', outfile, self.bam, catch_stdout=False)
@@ -354,13 +357,13 @@ class Bam(object):
         sizes = [read.rlen for read in samfile.head(topn)]
         mi, ma = min(sizes), max(sizes)
         if mi == 0 and ma == 0:
-            sizes = [read.inferred_length for read in samfile.head(alignments)]
+            sizes = [read.inferred_length for read in samfile.head(topn)]
             # remove 0 sizes (unaligned reads?)
             sizes = [x for x in sizes if x > 0]
             mi, ma = min(sizes), max(sizes)
         if mi != ma:
             if multiple == "error":
-                raise ValueError('multiple tag sizes in %s: %s' % (bamfile, sizes))
+                raise ValueError('multiple tag sizes in %s: %s' % (self.bam, sizes))
             elif multiple == "mean":
                 mi = int(sum(sizes) / len(sizes))
             elif multiple == "uniq":

@@ -16,7 +16,7 @@ from hiseq.utils.file import (
     file_exists, file_abspath, file_prefix, check_dir, remove_dir
 )
 from hiseq.utils.utils import log, update_obj, Config, run_shell_cmd, get_date
-from hiseq.utils.bed import bed_to_saf 
+# from hiseq.utils.bed import bed_to_saf 
 
 
 def read_fc_txt(x, fix_name=False):
@@ -82,6 +82,33 @@ def read_fc_summary(x):
     df = pd.DataFrame([total, assign, assign_pct]).T
     df.columns = ['total', 'map', 'pct']
     return df
+
+
+def bed_to_saf(file_in, file_out, overwrite=False):
+    """
+    Convert BED to SAF format, for featureCounts
+    GeneID Chr Start End Strand
+    see: https://www.biostars.org/p/228636/#319624
+    """
+    if file_exists(file_out) and not overwrite:
+        log.info('bed_to_saf() skipped, file exists: {}'.format(file_out))
+    else:
+        try:
+            with open(file_in, 'rt') as r, open(file_out, 'wt') as w:
+                for l in r:
+                    x = l.strip().split('\t')
+                    if len(x) < 3:
+                        return None
+                    n1 = '{}:{}-{}'.format(x[0], x[1], x[2])
+                    name, strand = [x[3], x[5]] if len(x) > 5 else [n1, '+']
+                    s, e = x[1:3] # start, end
+                    s = int(s) + 1
+                    saf = [name, x[0], s, e, strand]
+                    saf = list(map(str, saf))
+                    w.write('\t'.join(saf)+'\n')
+        except:
+            log.error('bed_to_saf() failed, see: {}'.format(file_out))
+    return file_out
 
 
 class FeatureCounts(object):

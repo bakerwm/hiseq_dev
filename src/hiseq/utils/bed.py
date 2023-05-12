@@ -14,9 +14,20 @@ TableReader
 
 
 import os
+import pathlib
+import shutil
+import pybedtools
+import tempfile
+from itertools import combinations
 from itertools import count
-from hiseq.utils.utils import log
-from hiseq.utils.file import file_exists
+from hiseq.utils.bam import Bam
+from hiseq.utils.genome import Genome
+from hiseq.utils.utils import (
+    log, update_obj, run_shell_cmd, Config, convert_image)
+from hiseq.utils.file import (
+    file_exists, file_prefix, file_nrows, read_file, 
+    check_dir, remove_file)
+from hiseq.utils.featurecounts import FeatureCounts
 
 
 def bed_to_saf(file_in, file_out, overwrite=False):

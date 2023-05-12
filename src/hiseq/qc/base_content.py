@@ -117,7 +117,7 @@ class BaseContentR1(object):
         """
         cmd = ' '.join([
             which('falco'),
-            '--nogroup -skip-report -skip-summary --quiet',
+            '--nogroup --skip-html --skip-short-summary --quiet',
             '--outdir {}'.format(self.out_dir),
             self.fq
         ])

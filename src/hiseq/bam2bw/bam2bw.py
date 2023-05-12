@@ -117,7 +117,7 @@ class Bam2bw_ns(object):
         # blacklist
         bl = getattr(self, 'blackListFileName', None)
         if isinstance(self.genome, str):
-            if bl is None:
+            if bl is None and not self.skip_blacklist:
                 self.blackListFileName = Genome(self.genome).blacklist
 
 

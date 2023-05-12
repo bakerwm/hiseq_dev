@@ -41,6 +41,9 @@ from hiseq.sample.sample import get_args as add_sample_args
 from hiseq.bam2bw.bam2bw import Bam2bw
 from hiseq.bam2bw.bam2bw import get_args as add_bam2bw_args
 
+from hiseq.bam2cor.bam2cor import bam2cor
+from hiseq.bam2cor.bam2cor import get_args as add_bam2cor_args
+
 from hiseq.qc.base_content import BaseContent
 from hiseq.qc.base_content import get_args as add_base_content_args
 
@@ -208,13 +211,20 @@ class Hiseq(object):
         Bam2bw(**args).run()
 
 
+    def bam2cor(self):
+        args = self.init_args(add_bam2cor_args())
+        bam2cor(**args)
+
+
     def basecontent(self):
         args = self.init_args(add_base_content_args())
         BaseContent(**args).run()
 
+
     def run_trackhub(self):
         args = self.init_args(add_run_trackhub_args())
         TrackHub(**args).run()
+
 
     def align(self):
         args = self.init_args(add_align_args())
@@ -279,24 +289,6 @@ class Hiseq(object):
 #         Trim(**args).run()
 
 
-#     def bam2cor(self):
-#         """
-#         Calculate bam correlation
-#         using deeptools
-#         """
-#         args = self.init_args(add_bam2cor_args())
-# #         Bam2cor(**args).run()
-#         if all([i.endswith('.bam') for i in args['bam_list']]):
-#             print('Bam2cor')
-#             Bam2cor(**args).run()
-#         elif all([i.endswith('.bigWig') for i in args['bam_list']]):
-#             print('Bw2cor')
-#             args['bw_list'] = args['bam_list'] # update
-#             Bw2cor(**args).run()
-#         else:
-#             log.error('no bam/bigWig files found')
-
-
 #     def bed2overlap(self):
 #         """
 #         Calculate IDR for peak files
@@ -312,10 +304,6 @@ class Hiseq(object):
 #         """
 #         args = self.init_args(add_fragsize_args())
 #         BamFragSize(**args).run()
-
-
-
-
 
 
 #     def p7(self):
@@ -336,8 +324,6 @@ class Hiseq(object):
 #         """
 #         args = self.init_args(add_bacteria_args())
 #         Kraken2(**args).run()
-
-
 
 
 # ################################################################################

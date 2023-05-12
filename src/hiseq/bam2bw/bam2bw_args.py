@@ -35,6 +35,7 @@ def get_bam_args(**kwargs):
         'bam': None,
         'binSize': 50,
         'blackListFileName': None,
+        'skip_blacklist': False,
         'centerReads': True,
         'effectiveGenomeSize': None,
         'extendReads': None,
@@ -67,6 +68,8 @@ def add_common_parser(parser):
         help='number of jobs run in parallel, default: [4]')
     parser.add_argument('-O', '--overwrite', dest='overwrite', action='store_true',
         help='Overwrite output file')
+    parser.add_argument('--skip-blacklist', dest='skip_blacklist', 
+        action='store_true', help='skip blacklist')
     # parser.add_argument('-sl', '--samplesLabel', nargs='+', default=None,
     #     help='labels for samples in plot, default: [None] auto')
     # parser.add_argument('-st', '--startLabel', default='TSS',

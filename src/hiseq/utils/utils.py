@@ -40,6 +40,7 @@ import logging
 import subprocess
 import random
 import string
+import tempfile
 import hashlib # hash functions
 # import uuid # generate a random number
 from PIL import Image # pillow
