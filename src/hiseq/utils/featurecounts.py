@@ -25,7 +25,7 @@ def read_fc_txt(x, fix_name=False):
     fix the name of bam file
     """
     try:
-        df = pd.read_csv(x, '\t', comment='#')
+        df = pd.read_csv(x, sep='\t', comment='#')
         if fix_name:
             bam_list = df.columns.to_list()[6:] # from 7-column to end
             bam_list = [os.path.splitext(i)[0] for i in bam_list]
@@ -62,7 +62,7 @@ def read_fc_summary(x):
         s = '0' # default
     # read summary
     try:
-        df = pd.read_csv(x, '\t', index_col=0)
+        df = pd.read_csv(x, sep="\t", index_col=0)
         df.columns = list(map(os.path.basename, df.columns.to_list()))
         total = df.sum(axis=0, skipna=True)
         assign = df.loc['Assigned', ]

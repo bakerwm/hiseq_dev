@@ -14,22 +14,23 @@ import glob
 import shutil
 import pysam
 import hiseq
-from hiseq.trim.trimmer import TrimR1
+from hiseq.trim.trim_r1 import TrimR1
 from hiseq.align.align import Align
-from hiseq.bam2bw.bam2bw import Bam2bw, bw_compare
-from hiseq.cnr.callpeak import CallPeak
+from hiseq.bam2bw.bam2bw import Bam2bw
+from hiseq.utils.bw import bw_compare
+from hiseq.callpeak.callpeak import CallPeak
 from hiseq.fragsize.fragsize import BamFragSize, BamFragSizeR1
 from hiseq.utils.file import (
-    list_file, list_dir, check_file, check_dir, copy_file, copy_dir, symlink_file,
-    remove_file, fx_name, file_exists, file_abspath, file_prefix, file_nrows
+    list_dir, check_file, check_dir, copy_file, copy_dir, symlink_file,
+    file_exists, file_nrows
 )
 from hiseq.utils.bam import Bam, Bam2cor, Bam2fingerprint
 from hiseq.utils.bed import PeakIDR, BedOverlap, PeakFRiP
 from hiseq.utils.utils import (
-    log, update_obj, Config, get_date, read_hiseq, list_hiseq_file,
-    is_hiseq_dir,
-    run_shell_cmd, find_longest_common_str, hash_string, check_hash_string
+    log, Config, run_shell_cmd, find_longest_common_str, hash_string
 )
+from hiseq.utils.hiseq_utils import read_hiseq, list_hiseq_file, is_hiseq_dir
+from hiseq.utils.bw import bw_compare
 
 
 def hiseq_norm_scale(x, hiseq_type='_r1', by_spikein=False, norm=1000000):
