@@ -75,8 +75,7 @@ log.setLevel('INFO')
 
 
 class Tabix(object):
-    """
-    
+    """    
     Example:
     >>> x = 'demo.bed.gz'
     >>> tbi = Tabix(x)
@@ -196,7 +195,11 @@ class Tabix(object):
         if isinstance(self.fh, tabix.open):
             query = self.format_region(region, chr, start, end) # chr1:1-100, chr1
             if isinstance(query, str):
-                return self.fh.querys(query) # tabix.iter
+                try:
+                    out = self.fh.querys(query) # tabix.iter
+                except:
+                    out = None # show error ?
+                return out
 
 
     def fetch2(self, region_list):
