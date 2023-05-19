@@ -82,7 +82,7 @@ class Demx(object):
             'fq2': None,
             'index_type': 'i7', # i7, barcode
             'out_dir': None,
-            'barcode_in_read': 1,
+            'barcode_in_read': 2,
             'barcode_n_left': 0,
             'barcode_n_right': 1,
             'index_table': None, #name,index
@@ -395,8 +395,8 @@ def get_args():
     parser.add_argument('-o', '--out-dir', dest='out_dir', required=True,
         help='directory to save the results')
     parser.add_argument('-x', '--barcode-in-read', dest='barcode_in_read',
-        choices=[1, 2], default=1, type=int,
-        help='barcode in read1/2, default: [1]')
+        choices=[1, 2], default=2, type=int,
+        help='barcode in read1/2, default: [2]')
     parser.add_argument('-l', '--barcode-n-left', type=int,
         dest='barcode_n_left', default=0,
         help='bases locate on the left of barcode')
