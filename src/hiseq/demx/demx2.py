@@ -243,11 +243,11 @@ class Demx2(object):
         Index().()
         """
         # extract i7 name
-        p = re.compile('True?Seq[.-_]Index\d{1,2}|Next_Ad2[\._-]\d{1,2}', re.IGNORECASE)
+        p = re.compile('True?Seq[\._-]Index\d{1,2}|Next_Ad2[\._-]\d{1,2}', re.IGNORECASE)
         g = p.search(x)
         if g:
             i7 = g.group() # 
-            i7 = re.sub('Ad2.', 'Ad2.', i7) # fix Ad2[.-_] to Ad2.
+            i7 = re.sub('Ad2.', 'Ad2.', i7, flags=re.IGNORECASE) # fix Ad2[.-_] to Ad2.
             i7 = re.sub('TruSeq.', 'TruSeq_', i7, flags=re.IGNORECASE) # fix TruSeq- to TruSeq_
             # Convert i7 seq
             out = [i7, HiSeqIndex(i7).index]
