@@ -243,7 +243,7 @@ class Demx2(object):
         Index().()
         """
         # extract i7 name
-        p = re.compile('True?Seq[\._-]Index\d{1,2}|Next_Ad2[\._-]\d{1,2}', re.IGNORECASE)
+        p = re.compile('True?Seq[\._-]Index\d{1,2}|Next_Ad2[\._-]\d{1,2}|D7\d+', re.IGNORECASE)
         g = p.search(x)
         if g:
             i7 = g.group() # 
