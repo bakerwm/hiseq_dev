@@ -327,7 +327,7 @@ class TrackFile(object):
             if not colorDim in self.subgroups:
                 colorDim = 'dimX'
         except:
-            print('!A-1, file: {}'.format(self.s))
+            # print('!A-1, file: {}'.format(self.s))
             colorDim = 'dimX'
         # self.subgroups is the subgroups structure {dimX: , dimY: , ...}
         # extract the mapping from the colorDim (dimX)

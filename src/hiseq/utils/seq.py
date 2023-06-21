@@ -82,6 +82,9 @@ def check_fx_paired(fq1, fq2, **kwargs):
         try:
             fx1 = pyfastx.Fastx(fq1)
             fx2 = pyfastx.Fastx(fq2)
+            a = next(fx1)
+            b = next(fx2)
+            # print('!A-1', a[0][:-1], b[0][:-1])
             for a,b in zip(fx1, fx2):
                 f3 = a[0][:-1] == b[0][:-1]
                 break

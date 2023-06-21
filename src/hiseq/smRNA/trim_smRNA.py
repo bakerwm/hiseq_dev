@@ -314,7 +314,7 @@ class TrimSmRNAR1(object):
     
     # step-2.
     def extract_umi(self, fq):
-        print('!AAAA-1', self.umi5, self.umi3, self.barcode)
+        # print('!AAAA-1', self.umi5, self.umi3, self.barcode)
         # guess umi5, umi3
         if isinstance(self.umi5, list):
             u5 = ','.join(self.umi5)

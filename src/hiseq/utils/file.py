@@ -374,7 +374,7 @@ def gzip_file(src, dest=None, decompress=True, **kwargs):
     if flag:
         src = os.path.abspath(os.path.expanduser(os.path.expandvars(src)))
         dest = os.path.abspath(os.path.expanduser(os.path.expandvars(dest)))
-        print('!A-1', dest)
+        # print('!A-1', dest)
         is_gzipped = file_is_gzipped(src)
         if decompress:
             if is_gzipped:

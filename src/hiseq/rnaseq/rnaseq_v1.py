@@ -1480,16 +1480,16 @@ class RNAseqConfig(object):
         """
         # 1st level
         if self.build_design:
-            print('!AAAA-1', 'build_design')
+            # print('!AAAA-1', 'build_design')
             self.hiseq_type = 'build_design'
         elif len(self.fq_groups) >= 1:
-            print('!AAAA-2', 'rnaseq_rx')
+            # print('!AAAA-2', 'rnaseq_rx')
             self.hiseq_type = 'rnaseq_rx'
         elif isinstance(self.fq1, list):
-            print('!AAAA-3', 'rnaseq_rn')
+            # print('!AAAA-3', 'rnaseq_rn')
             self.hiseq_type = 'rnaseq_rn'
         elif isinstance(self.fq1, str):
-            print('!AAAA-4', 'rnaseq_r1')
+            # print('!AAAA-4', 'rnaseq_r1')
             self.hiseq_type = 'rnaseq_r1'
         else:
             raise ValueError('unknown RNAseq type')

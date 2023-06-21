@@ -36,6 +36,7 @@ def get_bam_args(**kwargs):
         'binSize': 50,
         'blackListFileName': None,
         'skip_blacklist': False,
+        'skipNAs': True,
         'centerReads': True,
         'effectiveGenomeSize': None,
         'extendReads': None,

@@ -210,7 +210,7 @@ class RnaseqRd(object):
         # update fq
 #         fx = self.parse_fq_v1()
 #         fx = self.list_fq_files()
-        print('!A-2', fq)
+        # print('!A-2', fq)
 #         print('!A-1', len(fx))
         msg = ['='*80, 'build design']
         for k, v in fq.items():
