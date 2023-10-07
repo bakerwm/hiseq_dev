@@ -19,3 +19,4 @@ test/
 
 # temp files
 tmp.*
+*.gz
