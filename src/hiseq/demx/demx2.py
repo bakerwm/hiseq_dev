@@ -447,9 +447,9 @@ class Demx2(object):
             f'{"Date":>20} : {get_date()}',
             f'{"Number of fq(s)":>20} : {self.n_fq}',
             f'{"Number of index":>20} : {self.n_idx}',
-            f'{"Total reads":>20} : {fq_count:>11,}',
-            f'{"Total reads (M)":>20} : {fq_countm:>11.0f} M',
             f'{"Expect reads (M)":>20} : {readsm:>11} M',
+            f'{"Total reads (M)":>20} : {fq_countm:>11.0f} M',
+            f'{"Total reads":>20} : {fq_count:>11,}',
             f'{"Output Percent":>20} : {fq_pct:>11.1f} %',
         ]
         # add header
