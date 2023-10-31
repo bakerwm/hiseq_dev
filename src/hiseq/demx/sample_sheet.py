@@ -109,6 +109,7 @@ import warnings
 from pathlib import Path
 import argparse
 import pandas as pd
+import numpy as np
 # from hiseq.utils.helper import update_obj
 from hiseq.utils.utils import log, update_obj, get_date
 import importlib.resources as res
@@ -296,26 +297,24 @@ class SampleSheet(object):
         output: pd.DataFrame
         """
         try:
+            # suppress warnings, pandas openxyl for DataValidation, ...
+            warnings.simplefilter(action='ignore', category=UserWarning)
             if Path(x).suffix in ['.csv']:
                 df = pd.read_csv(x, comment='#')
             elif Path(x).suffix in ['.xlsx', 'xls']:
-                # suppress warnings of Data validation by openpyxl
-                warnings.simplefilter(action='ignore', category=UserWarning) 
                 df = pd.read_excel(x, sheet_name='sample_sheet')
-                warnings.resetwarnings() # reset to default
             else:
                 pass
-            # update table
-            df.dropna(axis='index', thresh=4, inplace=True) # require 4 columns
-            df.fillna('NULL', inplace=True) # convert nan to 'NULL'
-            # df.replace('^Null$', 'NULL', regex=True, inplace=True)
-            # require regex, ignore case ?
-            df.replace(
-                regex=['^Null$', '^NUll$', '^NULl$', '^NUlL$', '^NuLL$'], 
-                value='NULL', inplace=True
-            )
+            # update table, remove rows with more than 4 nan vavlues
+            df.dropna(axis='index', thresh=4, inplace=True)
+            # convert nan,null to 'NULL'
+            df.replace(np.nan, 'NULL', regex=True, inplace=True)
+            df.replace('[Nn][Uu][Ll][Ll]', 'NULL', regex=True, inplace=True)
+            # remove non alphabetic characters
             c0 = df.columns.to_list() # original columns
             df.columns = [re.sub('[^\\w]', '', i).lower() for i in c0]
+            # reset warnings
+            warnings.resetwarnings() # reset to default
         except:
             log.error(f'Could not read sample_sheet: {x}')
             df = pd.DataFrame(
@@ -327,7 +326,10 @@ class SampleSheet(object):
     def fix_table(self, df):
         """
         format table, get index name, index seq, sample name
-        """         
+        deal with multiple version of sample versions
+        """
+        if len(df) == 0:
+            return df # empty DataFrame
         # headers
         # version-1:
         header1 = ['sample_name', 'p7_index_id', 'barcode_id', 'readsm']

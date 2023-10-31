@@ -201,7 +201,6 @@ class Demx2(object):
         sn = ss.get('sub_name', []) # sub_names
         fq_skipped = [] # fq files not in sheet
         for fq1,fq2 in self.fq_pe_list:
-            print('!A-1', fq1, fq1_new)
             suffix1 = self.fq_suffix(fq1) # _1.fq.gz
             suffix2 = self.fq_suffix(fq2) # _2.fq.gz
             sub_name = self.fq_match(fq1, sn) # sub_name
@@ -212,6 +211,7 @@ class Demx2(object):
             name = ss.get('name')[ix] # new name
             fq1_new = str(Path(self.out_dir) / (name + suffix1))
             fq2_new = str(Path(self.out_dir) / (name + suffix2))
+            # print('!A-1', fq1, fq1_new)
             # create symlinks
             # pathlib.relative_to() not working !!!
             if not Path(fq1_new).exists():
@@ -261,8 +261,12 @@ class Demx2(object):
             self.fq_metadata = Config().load(self.fq_metadata_json)
         else:
             self.fq_metadata = {}
+        # show progress
+        i = 0
         for k, v in self.fq_info.items(): # see self.rename_fq()
+            i += 1
             fq1 = v.get('fq1', None) # fastq file, new_file
+            print(f'[{i}/{self.n_fq}] - {fq1}', end='\r') # progress
             # check reads
             fq_count = v.get('count', None)
             if fq_count is None:
@@ -380,6 +384,7 @@ class Demx2(object):
         @A01994:99:HFJCLDSX7:3:1101:19045:1031 1:N:0:GGACTCCT+AGATCTCG
         - 1:N:0:GGACTCCT+AGATCTCG (i7+i5)
         - 1:N:0:ATCACGAT (i7)
+        -  (empty) does not contain comment in read_id
 
         expect 8-digit i5,i7 index
         for 6-digit TruSeq index, append 'AT'
@@ -400,22 +405,19 @@ class Demx2(object):
                             break # stop
                         fq_index = list(r1)[-1] # 1:N:0:GGACTCCT+AGATCTCG
                         s = re.split('[:+]', fq_index) # 3:i7, 4:i5
-                        # query = s[3] # i7, ignore i5
-                        # m1 = str_distance(s[3], hi7.index) # i7
                         m1 = str_distance(s[3], i7) # i7
                         if len(s) > 4:
-                            # m2 = str_distance(s[4], hi5.index) # i5
                             m2 = str_distance(s[4], i5) # i5
                         else:
                             m2 = 0 # single index in fastq
-                        # if hi5.index == 'NULL':
                         if i5 == 'NULL': # skip i5
                             m2 = 0
                         # check mismatch
                         if m1 > mm or m2 > mm:
                             n_error += 1 # error
             except:
-                log.error(f'Could not read file: {fq}')
+                # log.error(f'Could not valid index: {fq}')
+                log.warning(f'Could not find index from fq: {fq}')
                 n_error = n_max # skipped
             out = (n_max - n_error) / n_max >= cutoff
         else:
