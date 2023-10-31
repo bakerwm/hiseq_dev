@@ -24,8 +24,8 @@ from collections import Counter
 from contextlib import ExitStack # write multiple files
 from multiprocessing import Pool
 from hiseq.demx.demx_r1 import DemxR1
-# from hiseq.demx.sample_sheet import HiSeqIndex, SampleSheet
-from sample_sheet import HiSeqIndex, SampleSheet
+from hiseq.demx.sample_sheet import HiSeqIndex, SampleSheet
+# from sample_sheet import HiSeqIndex, SampleSheet
 from hiseq.utils.utils import log, update_obj, Config, get_date, str_distance
 from hiseq.utils.seq import Fastx, list_fx, list_fx2, readfq
 from hiseq.utils.file import (
@@ -201,7 +201,7 @@ class Demx2(object):
         sn = ss.get('sub_name', []) # sub_names
         fq_skipped = [] # fq files not in sheet
         for fq1,fq2 in self.fq_pe_list:
-            # print('!A-1', fq1)
+            print('!A-1', fq1, fq1_new)
             suffix1 = self.fq_suffix(fq1) # _1.fq.gz
             suffix2 = self.fq_suffix(fq2) # _2.fq.gz
             sub_name = self.fq_match(fq1, sn) # sub_name
@@ -435,7 +435,7 @@ class Demx2(object):
         fq_count = sum([v.get('count', 0) for k,v in self.fq_metadata.items()])
         fq_countm = fq_count / 1e6
         try:
-            fq_pct = fq_countm / readsm
+            fq_pct = fq_countm / readsm * 100
         except:
             fq_pct = 100 # divided by zero errors
         # summary
