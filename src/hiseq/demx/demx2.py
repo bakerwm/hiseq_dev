@@ -146,29 +146,55 @@ class Demx2(object):
             else:
                 fq_err = 1 #
             self.fq_is_ok = fq_err == 0
-            # pack pe reads
+            # pairing PE files
             if self.fq_is_ok:
                 self.fq_pe_list = [[i, j] for i,j in zip(fq1, fq2)]
             # guess sheet version:
             # version-1: Next_Ad2.1, TruSeq_Index1, ...
             # version-2: YY427s001, YY427s002, ...
-            prefix = [Path(i).stem.lower() for i in self.fq_list] # filename
-            pb = [i.startswith('next') or i.startswith('truseq') for i in prefix]
-            self.fq_version = 1 if all(pb) else 2 # version 1 or 2
+            fq_ver_list = self.fq_version(self.fq_list)
+            if min(fq_ver_list) == 0:
+                f_list = [self.fq_list[i] for i,j in enumerate(fq_ver_list) if j == 0]
+                f_msg = ','.join([Path(i).name for i in f_list])
+                log.warning(f'unknown fq names found: {fq_missing}')
+            self.fq_ver = max(fq_ver_list)
         else:
             # raise ValueError(f'no fastq files found: {self.data_dir}')
             log.error(f'no fastq files found: {self.data_dir}')
+
+
+    def fq_version(self, x):
+        """
+        Check the version of fastq name or sample sheet version:
+        version-1, TruSeq_Index1-48, Next_Ad2.1, ...
+        version-2, YY427s001, YY003s004, ...
+        """
+        if isinstance(x, str):
+            xname = Path(x).name.lower()
+            if 'next' in xname or 'truseq' in xname:
+                ver = 1
+            elif bool(re.search('[a-z]{2,3}[0-9]{2,4}s[0-9]{2,4}\\_', xname)):
+                ver = 2
+            else:
+                ver = 0
+        elif isinstance(x, list):
+            ver = [self.fq_version(i) for i in x]
+        else:
+            print(f'expect str or list, got {type(x)}')
+            ver = 0
+        return ver
 
 
     def load_index(self):
         ss = SampleSheet(
             excel_file=self.sample_sheet,
             out_csv=self.index_csv,
-            format=self.fq_version, # see self.load_fq()
+            format=self.fq_ver, # see self.load_fq()
         )
         ss.to_csv() # convert sheet to csv
         # check if index unique
-        dup1 = ss.db.duplicated(subset=['i7', 'i5', 'bc'])
+        # dup1 = ss.db.duplicated(subset=['i7', 'i5', 'bc'])
+        dup1 = ss.db.duplicated(subset=['i7', 'i5']) # ignore barcode line
         if any(dup1):
             log.error(ss.db[dup1])
             raise ValueError(f'Duplicate i7/i5/barcode found: {self.sample_sheet}')
@@ -180,11 +206,221 @@ class Demx2(object):
             # dual index
             pass
         if ss.n_bc > 0:
-            # using demx for each i7/i5 file
-            df_bc = ss.db[ss.db['bc'] != 'NULL'] # split 
-            raise ValueError(f'use another program for barcode demultiplexing')
+            ss.db.loc[:, ['bc']] = ['NULL']
+            ss.db.loc[:, ['bc_seq']] = ['NULL']
+            log.warning('[ss.n_bc] barcodes ignored')
         # save as dict
         self.sheet_db = ss.db # pd.DataFrame
+
+
+    def guess_fq_name(self, x):
+        """
+        guess filename and read1/2
+        Guess the real name from fq file, received from sequencing company, 
+        always append prefix and suffix to the original name, for example:
+        YY427s001      : 2309180_YY427s001_S09_L1_R1_001
+        Next_Ad2.1     : Next_Ad2-1_R1, Next_Ad2_1_R1
+        TrueSeq_Index1 : TruSeq_Index1_R1
+        """
+        if isinstance(x, str): # name.fq.gz
+            xname = Path(x).stem # name.fq
+            if x.endswith('.gz'):
+                xname = Path(xname).stem # name
+            # fq extension: read1 or read2
+            # _R1, _1, remove _001 suffix
+            ps1 = re.compile(r'\\_\\d{3}$', re.UNICODE)
+            ps2 = re.compile(r'[^0-9]+$', re.UNICODE)
+            xname = ps1.sub('', xname) # remove suffix
+            xname = ps2.sub('', xname) # remove non-digit from suffix
+            fext = xname[-1] # last character
+            # fq name
+            pattern = re.compile(
+                r'(([A-Z]{2,3}[0-9]{2,4}s[0-9]{2,4})|(Next_Ad2.[0-9]+)|(TruSeq_Index[0-9]+))',
+                re.UNICODE)
+            s = pattern.search(xname)
+            fn = s.group(1) if bool(s) else xname
+            out = [fn, fext] 
+        elif isinstance(x, list):
+            out = [self.guess_fq_name(i) for i in x]
+        else:
+            log.warning(f'expect str or list, got {type(x)}')
+            out = None
+        return out
+
+
+    def search_fq(self, x, p):
+        """
+        match fastq_name from sub_name
+        Get the close match of x from p (list), return the top 1 hit
+        x is the query, a string 
+        p is the possibilities, a list of sequences
+        n is the max number of hits to return, default: 1
+        
+        Default actions
+        Next_Ad2.1: Next_Ad2.1, Next_Ad2-1, Next_Ad2_1
+        TruSeq_Index1: TruSeq_Index1
+
+        Output: sub_name
+        """
+        if isinstance(x, str):
+            # guess fq name
+            xname, xext = self.guess_fq_name(x)
+            # # get x_name
+            # # pattern: _R1.fastq.gz
+            # pt = re.compile('(\\.|_)(R?[12]).(f(ast)?q+)(.gz)?$', flags=re.IGNORECASE)
+            # # prefix
+            # x_prefix = pt.sub('', str(Path(x).name)) # remove suffix
+            hit = get_close_matches(xname, p, n=1, cutoff=0.6) #
+            if len(hit) == 0:
+                return None
+            else:
+                return hit[0]
+        else:
+            return None # no hits
+
+
+    def fq_paired(self, x):
+        """
+        Check if fq is paired
+        1=read1(PE), 2=read2(PE), 0=SE, -1=(not fastq)
+        """
+        if isinstance(x, str):
+            p1 = re.compile('\\.(f(ast)?q+)(\\.gz)?$', flags=re.IGNORECASE)
+            p2 = re.compile('(\\.|_)(R?[12])\\.(f(ast)?q+)(\\.gz)?$', flags=re.IGNORECASE)
+            if p1.search(x):
+                if p2.search(x):
+                    # paired-end
+                    r12 = p2.search(x).groups()[1] # R1/2
+                    r12 = re.sub('[^0-9]', '', r12) # 1/2
+                    r12 = int(r12) #
+                else:
+                    r12 = 0 # single-end
+            else:
+                r12 = -1 # not fastq
+            return r12
+
+
+    def fq_suffix(self, x, ext='fq'):
+        """
+        Get the extension of fastq file     
+        output:
+        demo_1.fq.gz     -> _1.fq.gz
+        demo_R1.FQ.GZ    -> _1.fq.gz
+        demo_R1.FASTQ.gz -> _1.fq.gz
+        demo.fq.gz       -> .fq.gz
+        demo.fastq.gz    -> .fq.gz
+        """
+        if isinstance(x, str):
+            # suffix: .fq.gz
+            if Path(x).suffix == '.gz':
+                if isinstance(ext, str):
+                    suffix = '.' + ext + '.gz'
+                else:
+                    suffix = Path(Path(p).stem).suffix + '.gz'
+            else:
+                if isinstance(ext, str):
+                    suffix = '.' + ext
+                else:
+                    suffix = Path(p).suffix
+            # read1/2: _1
+            r12 = self.fq_paired(x) # 1=read1, 2=read2, 0=se, -1="not fq"
+            if r12 > 0:
+                r12 = f'_{r12}' # _1, _2
+            else:
+                r12 = '' # empty
+            # pattern: _R1.fastq.gz
+            # pt = re.compile('(\\.|_)(R?[12]).(f(ast)?q+)(.gz)?$', flags=re.IGNORECASE)
+            # if pt.search(x):
+            #     r12 = pt.search(x).groups()[1] # R1
+            #     r12 = re.sub('[^0-9]', '', r12)
+            #     r12 = '_' + r12 # _1, _2
+            # else:
+            #     r12 = ''
+            return r12 + suffix
+
+
+    def validate_index(self, fq, i7, i5, mm=1, n_max=100, cutoff=0.95):
+        """
+        validate the index for fastq
+        Fastq file name_line: (line=1) 
+        @A01994:99:HFJCLDSX7:3:1101:19045:1031 1:N:0:GGACTCCT+AGATCTCG
+        - 1:N:0:GGACTCCT+AGATCTCG (i7+i5)
+        - 1:N:0:ATCACGAT (i7)
+        -  (empty) does not contain comment in read_id
+        expect 8-digit i5,i7 index
+        for 6-digit TruSeq index, append 'AT'
+        i7 and i5 is the index_seq
+        """
+        # hi7 = HiSeqIndex(i7)
+        # hi5 = HiSeqIndex(i5)
+        # if hi7.is_valid(i7) and hi5.is_valid(i5):
+        if isinstance(i7, str) and isinstance(i5, str):
+            n_flag = 0
+            n_error = 0
+            try:
+                with xopen(fq) as fh:
+                    for r1 in readfq(fh): # name, seq, quality, comment
+                        n_flag += 1
+                        if n_flag > n_max:
+                            break # stop
+                        fq_index = list(r1)[-1] # 1:N:0:GGACTCCT+AGATCTCG
+                        s = re.split('[:+]', fq_index) # 3:i7, 4:i5
+                        m1 = str_distance(s[3], i7) # i7
+                        if len(s) > 4:
+                            m2 = str_distance(s[4], i5) # i5
+                        else:
+                            m2 = 0 # single index in fastq
+                        if i5 == 'NULL': # skip i5
+                            m2 = 0
+                        # check mismatch
+                        if m1 > mm or m2 > mm:
+                            n_error += 1 # error
+            except:
+                # log.error(f'Could not valid index: {fq}')
+                log.warning(f'Could not find index from fq: {fq}')
+                n_error = n_max # skipped
+            out = (n_max - n_error) / n_max >= cutoff
+        else:
+            out = False
+        return out
+
+
+    def stat_fq(self):
+        """
+        Wrap all info for each fastq file:
+        sub_name, name, index_valid, count
+        """
+        if not self.fq_is_ok:
+            return None # skipped
+        # update metadata (from self.fq_info)
+        if Path(self.fq_metadata_json).exists():
+            self.fq_metadata = Config().load(self.fq_metadata_json)
+        else:
+            self.fq_metadata = {}
+        # show progress
+        i = 0
+        for k, v in self.fq_info.items(): # see self.rename_fq()
+            i += 1
+            fq1 = v.get('fq1', None) # fastq file, new_file
+            print(f'[{i}/{self.n_fq}] - {Path(fq1).name}', end='\r') # progress
+            # check reads
+            fq_count = v.get('count', None)
+            if fq_count is None:
+                fq_count = Fastx(fq1).number_of_seq()
+            # check index
+            i7 = v.get('i7_seq', 'NULL')
+            i5 = v.get('i5_seq', 'NULL')
+            index_valid = v.get('index_valid', None)
+            if index_valid is None:
+                index_valid = self.validate_index(fq1, i7, i5)
+            v.update({
+                'index_valid': index_valid,
+                'count': fq_count,
+            })
+            # save as metadata
+            self.fq_metadata.update({k:v})
+        # save to file
+        Config().dump(self.fq_metadata, str(self.fq_metadata_json))
 
 
     def rename_fq(self):
@@ -203,7 +439,7 @@ class Demx2(object):
         for fq1,fq2 in self.fq_pe_list:
             suffix1 = self.fq_suffix(fq1) # _1.fq.gz
             suffix2 = self.fq_suffix(fq2) # _2.fq.gz
-            sub_name = self.fq_match(fq1, sn) # sub_name
+            sub_name = self.search_fq(fq1, sn) # sub_name
             if sub_name is None:
                 fq_skipped.append(Path(fq1).name)
                 continue
@@ -249,182 +485,6 @@ class Demx2(object):
         self.stat_fq()
 
 
-    def stat_fq(self):
-        """
-        Wrap all info for each fastq file:
-        sub_name, name, index_valid, count
-        """
-        if not self.fq_is_ok:
-            return None # skipped
-        # update metadata (from self.fq_info)
-        if Path(self.fq_metadata_json).exists():
-            self.fq_metadata = Config().load(self.fq_metadata_json)
-        else:
-            self.fq_metadata = {}
-        # show progress
-        i = 0
-        for k, v in self.fq_info.items(): # see self.rename_fq()
-            i += 1
-            fq1 = v.get('fq1', None) # fastq file, new_file
-            print(f'[{i}/{self.n_fq}] - {fq1}', end='\r') # progress
-            # check reads
-            fq_count = v.get('count', None)
-            if fq_count is None:
-                fq_count = Fastx(fq1).number_of_seq()
-            # check index
-            i7 = v.get('i7_seq', 'NULL')
-            i5 = v.get('i5_seq', 'NULL')
-            index_valid = v.get('index_valid', None)
-            if index_valid is None:
-                index_valid = self.validate_index(fq1, i7, i5)
-            v.update({
-                'index_valid': index_valid,
-                'count': fq_count,
-            })
-            # save as metadata
-            self.fq_metadata.update({k:v})
-        # save to file
-        Config().dump(self.fq_metadata, str(self.fq_metadata_json))
-
-
-    def fq_match(self, x, p):
-        """
-        match fastq_name from sub_name
-        Get the close match of x from p (list), return the top 1 hit
-        x is the query, a string 
-        p is the possibilities, a list of sequences
-        n is the max number of hits to return, default: 1
-        
-        Default actions
-        Next_Ad2.1: Next_Ad2.1, Next_Ad2-1, Next_Ad2_1
-        TruSeq_Index1: TruSeq_Index1
-
-        Output: sub_name
-        """
-        if isinstance(x, str):
-            # pattern: _R1.fastq.gz
-            pt = re.compile('(\\.|_)(R?[12]).(f(ast)?q+)(.gz)?$', flags=re.IGNORECASE)
-            # prefix
-            x_prefix = pt.sub('', str(Path(x).name)) # remove suffix
-            hit = get_close_matches(x_prefix, p, n=1, cutoff=0.6) #
-            if len(hit) == 0:
-                return None
-            else:
-                return hit[0]
-        else:
-            return None # no hits
-
-
-    def fq_paired(self, x):
-        """
-        Check if fq is paired
-        1=read1(PE), 2=read2(PE), 0=SE, -1=(not fastq)
-        """
-        if isinstance(x, str):
-            p1 = re.compile('\\.(f(ast)?q+)(\\.gz)?$', flags=re.IGNORECASE)
-            p2 = re.compile('(\\.|_)(R?[12])\\.(f(ast)?q+)(\\.gz)?$', flags=re.IGNORECASE)
-            if p1.search(x):
-                if p2.search(x):
-                    # paired-end
-                    r12 = p2.search(x).groups()[1] # R1/2
-                    r12 = re.sub('[^0-9]', '', r12) # 1/2
-                    r12 = int(r12) #
-                else:
-                    r12 = 0 # single-end
-            else:
-                r12 = -1 # not fastq
-            return r12
-
-
-    def fq_suffix(self, x, ext='fq'):
-        """
-        Get the extension of fastq file
-        
-        output:
-        demo_1.fq.gz     -> _1.fq.gz
-        demo_R1.FQ.GZ    -> _1.fq.gz
-        demo_R1.FASTQ.gz -> _1.fq.gz
-        demo.fq.gz       -> .fq.gz
-        demo.fastq.gz    -> .fq.gz
-        """
-        if isinstance(x, str):
-            # suffix: .fq.gz
-            if Path(x).suffix == '.gz':
-                if isinstance(ext, str):
-                    suffix = '.' + ext + '.gz'
-                else:
-                    suffix = Path(Path(p).stem).suffix + '.gz'
-            else:
-                if isinstance(ext, str):
-                    suffix = '.' + ext
-                else:
-                    suffix = Path(p).suffix
-            # read1/2: _1
-            r12 = self.fq_paired(x) # 1=read1, 2=read2, 0=se, -1="not fq"
-            if r12 > 0:
-                r12 = f'_{r12}' # _1, _2
-            else:
-                r12 = '' # empty
-            # pattern: _R1.fastq.gz
-            # pt = re.compile('(\\.|_)(R?[12]).(f(ast)?q+)(.gz)?$', flags=re.IGNORECASE)
-            # if pt.search(x):
-            #     r12 = pt.search(x).groups()[1] # R1
-            #     r12 = re.sub('[^0-9]', '', r12)
-            #     r12 = '_' + r12 # _1, _2
-            # else:
-            #     r12 = ''
-            return r12 + suffix
-
-
-    def validate_index(self, fq, i7, i5, mm=1, n_max=100, cutoff=0.95):
-        """
-        validate the index for fastq
-
-        Fastq file name_line: (line=1) 
-        @A01994:99:HFJCLDSX7:3:1101:19045:1031 1:N:0:GGACTCCT+AGATCTCG
-        - 1:N:0:GGACTCCT+AGATCTCG (i7+i5)
-        - 1:N:0:ATCACGAT (i7)
-        -  (empty) does not contain comment in read_id
-
-        expect 8-digit i5,i7 index
-        for 6-digit TruSeq index, append 'AT'
-
-        i7 and i5 is the index_seq
-        """
-        # hi7 = HiSeqIndex(i7)
-        # hi5 = HiSeqIndex(i5)
-        # if hi7.is_valid(i7) and hi5.is_valid(i5):
-        if isinstance(i7, str) and isinstance(i5, str):
-            n_flag = 0
-            n_error = 0
-            try:
-                with xopen(fq) as fh:
-                    for r1 in readfq(fh): # name, seq, quality, comment
-                        n_flag += 1
-                        if n_flag > n_max:
-                            break # stop
-                        fq_index = list(r1)[-1] # 1:N:0:GGACTCCT+AGATCTCG
-                        s = re.split('[:+]', fq_index) # 3:i7, 4:i5
-                        m1 = str_distance(s[3], i7) # i7
-                        if len(s) > 4:
-                            m2 = str_distance(s[4], i5) # i5
-                        else:
-                            m2 = 0 # single index in fastq
-                        if i5 == 'NULL': # skip i5
-                            m2 = 0
-                        # check mismatch
-                        if m1 > mm or m2 > mm:
-                            n_error += 1 # error
-            except:
-                # log.error(f'Could not valid index: {fq}')
-                log.warning(f'Could not find index from fq: {fq}')
-                n_error = n_max # skipped
-            out = (n_max - n_error) / n_max >= cutoff
-        else:
-            out = False
-        return out
-
-
     def report(self):
         """
         Generate summary report, save read count
@@ -447,7 +507,7 @@ class Demx2(object):
             f'{"Date":>20} : {get_date()}',
             f'{"Number of fq(s)":>20} : {self.n_fq}',
             f'{"Number of index":>20} : {self.n_idx}',
-            f'{"Expect reads (M)":>20} : {readsm:>11} M',
+            f'{"Expect reads (M)":>20} : {readsm:>11.0f} M',
             f'{"Total reads (M)":>20} : {fq_countm:>11.0f} M',
             f'{"Total reads":>20} : {fq_count:>11,}',
             f'{"Output Percent":>20} : {fq_pct:>11.1f} %',
@@ -487,7 +547,7 @@ class Demx2(object):
                 f'{i5:<12}',
                 f'{fq_count:>12,}',
                 f'{fq_countm:>7.1f}   ',
-                f'{readsm:>5,}   ',
+                f'{readsm:>5,.0f}   ',
                 f'{pct:>5.1f}',
                 f'{index_flag:>6}',
             ]))
@@ -525,17 +585,6 @@ def get_args():
         help='sample table in xlsx format, eg: YY00.xlsx')
     parser.add_argument('-o', '--out-dir', dest='out_dir', required=True,
         help='directory to save the results')
-    # parser.add_argument('-x', '--barcode-in-read', dest='barcode_in_read',
-    #     choices=[1, 2], default=2, type=int,
-    #     help='barcode in read1/2, default: [2]')
-    # parser.add_argument('-l', '--barcode-n-left', type=int,
-    #     dest='barcode_n_left', default=0,
-    #     help='bases locate on the left of barcode')
-    # parser.add_argument('-r', '--barcode-n-right', type=int,
-    #     dest='barcode_n_right', default=0,
-    #     help='bases locate on the right of barcode')
-    # parser.add_argument('-m', '--mismatch', type=int, default=0,
-    #     help='mismatches allowed to search index, default: [0]')
     # parser.add_argument('-O', '--overwrite', action='store_true',
     #     help='Overwrite exists files, default: off')
     return parser

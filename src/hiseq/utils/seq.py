@@ -213,7 +213,7 @@ def list_fx(x, recursive=False):
     out = list_dir(x, full_names=True, include_dirs=False, recursive=recursive)
     if len(out) > 0:
         # out = [i for i in out if os.path.splitext(i)[1].lower() in ext_list]
-        p = re.compile('\.f(ast)?(a|q)(\.gz)?', flags=re.IGNORECASE)
+        p = re.compile('\.f(ast)?(a|q)(\.gz)?$', flags=re.IGNORECASE)
         out = [i for i in out if p.search(i)]
     return sorted(list(set(out)))
 
