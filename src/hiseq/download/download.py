@@ -14,13 +14,80 @@ import argparse
 import subprocess
 from pathlib import Path
 from urllib import request
-# from dateutil import tz
-from hiseq.utils.utils import log, update_obj, get_date
+from dateutil import tz
+from datetime import datetime
+# from hiseq.utils.utils import update_obj, get_date
+
+
+def update_obj(obj, d, force=True, remove=False):
+    """
+    Update the object, by dict
+    Args:
+        obj (object): an object
+        d (dict): a dict to update values in object
+        force (bool): update exists attributes to object, default: True
+        remove (bool): remove exists attributes from object, default: False
+    Returns:
+        (object) an updated object
+    """
+    if remove is True:
+        for k in obj.__dict__:
+            delattr(obj, k)
+    # add attributes
+    if isinstance(d, dict):
+        for k, v in d.items():
+            if not hasattr(obj, k) or force:
+                setattr(obj, k, v)
+    return obj
+
+
+def get_date(timestamp=False):
+    """
+    Return the current date in UTC.timestamp or local-formated-string
+    calculation in UTC
+    Args:
+        timestamp (bool): return timestamp
+    Returns:
+        current time
+    
+    Example:
+    >>> from datetime import datetime
+    >>> from dateutil import tz
+    >>> get_date()
+    '2021-05-18 17:08:53'
+    
+    >>> get_date(True)
+    1621328957.280303
+    
+    # convert timestamp to local time
+    >>> ts = get_date(True)
+    >>> datetime.fromtimestamp(ts, tz.tzlocal())
+    """
+    now = datetime.now(tz.tzlocal())
+    if isinstance(timestamp, bool) and timestamp:
+        out = now.timestamp()
+    else:
+        now = now.astimezone(tz.tzlocal()) # to local
+        out = now.strftime('%Y-%m-%d %H:%M:%S') # YY-mm-dd H:M:S
+    return out
 
 
 class OSSinfo(object):
     """
     Parse OSS info from text file, that could be in the following format:
+
+    Args:
+        oss_txt (str): A text file record the oss info
+        ossutil (str): Path to the ossutil command
+        endpoint (str): endpoint for oss
+        region (str): region for oss
+        accesskeyid (str): AccessKeyId for oss
+        accesskeysecret (str): AccessKeyId for oss
+
+    Returns:
+        (list) a list of oss_info in dict
+
+    Description:
     format-1:
         AccessKeyId: ...
         Access_key_secret: ...
@@ -30,20 +97,15 @@ class OSSinfo(object):
         AccessKeyId     ...
         AccessKeySecret ...
         预设OSS路径     oss://...
-    format-3:
-        AccessKeyId ...
-        AccessKeySecret ...
-        预设TOS路径: tos://sky...
-        Endpoint: https://tos-cn-shanghai.volces.com
-        华东2(上海)
     format-4:
         https://...
     format-5:
         oss://...
         tos://...
-    return
-    1. list of oss_info
-    2. list of http urls
+    # pre-defined config
+    'psndata': {'region': 'shanghai', 'endpoint': 'http://oss-cn-shanghai.aliyuncs.com'}
+    'seekgene': {'region': 'beijing', 'endpoint': 'http://oss-cn-beijing.aliyuncs.com'}
+    'skyseq': {'region': 'cn-shanghai', 'endpoint': 'https://tos-cn-shanghai.volces.com'}
     """
     def __init__(self, **kwargs):
         self = update_obj(self, kwargs, force=True)
@@ -55,24 +117,66 @@ class OSSinfo(object):
             'oss_txt': None,
             'region': None,
             'endpoint': None,
-            'ossutil': '/data/biosoft/ossutil/ossutil',
+            'ossutil': None,
             'accesskeyid': None,
             'accesskeysecret': None,
         }
         self = update_obj(self, args, force=False)
-        self.get_ossutil() #
         self.info = [self.parse_oss_info(i) for i in self.load_oss_txt()]
 
 
-    def get_ossutil(self):
-        if isinstance(self.ossutil, str):
-            self.tosutil = str(Path(self.ossutil).parent / 'tosutil')
+    def pre_config(self, oss_path=None):
+        """
+        pre-defined config for selected companies
+        oss_path: 'oss://seekgene-release/2307015_1010/release/'
+        """
+        cfg = {
+            'psndata': {
+                'region': 'shanghai', 
+                'endpoint': 'http://oss-cn-shanghai.aliyuncs.com',
+            },
+            'seekgene': {
+                'region': 'beijing', 
+                'endpoint': 'http://oss-cn-beijing.aliyuncs.com',
+            },
+            'skyseq': {
+                'region': 'cn-shanghai', 
+                'endpoint': 'https://tos-cn-shanghai.volces.com',
+            },
+        }
+        if isinstance(oss_path, str):
+            parts = Path(oss_path).parts
+            cname = parts[1] if len(parts) > 1 else 'psndata' #
         else:
-            self.tosutil = 'tosutil' # default
-        if not Path(self.ossutil).exists():
-            self.ossutil = 'ossutil' # from PATH
-        if not Path(self.tosutil).exists():
-            self.tosutil = 'tosutil' # from PATH
+            cname = 'psndata'
+        cinfo = [v for k,v in cfg.items() if cname.startswith(k)]
+        return cinfo[0] if len(cinfo) > 0 else {}
+
+
+    def cmd_config(self, oss_path=None):
+        if isinstance(self.ossutil, str):
+            cmd = Path(self.ossutil).name
+            cmd = re.sub('[^A-Za-z\\_\\-]', '', cmd)
+            # auto switch between ossutil and tosutil
+            if isinstance(oss_path, str):
+                cmd = f'{oss_path[:3]}util' # ossutil/tosutil
+                # update
+                self.ossutil = str(Path(self.ossutil).parent / cmd)
+            cfg = str(Path('~').expanduser() / f'.{cmd}config')
+            return cfg
+
+
+    def filter_oss(self, x):
+        """
+        Filter oss_info
+        remove comment lines
+        """
+        if isinstance(x, str):
+            lines = [
+                i.strip() for i in re.split('\\n', x)
+                if not i.startswith('#') and len(i) > 20
+            ]
+            return '\\n'.join(lines)
 
 
     def load_oss_txt(self, x=None):
@@ -94,12 +198,31 @@ class OSSinfo(object):
                 # split into blocks by empty line
                 line = re.sub('\\n\\s*\\n', '\\n\\n', line.strip())
                 blocks = re.split('\\n{2,100}', line)
-                blocks = [i for i in blocks if len(i) > 20]
+                blocks = [i for i in blocks if len(self.filter_oss(i)) > 20]
         except FileNotFoundError as e:
-            log.warning(f'File not found: {e}, {x}')
+            print(f'File not found: {e}, {x}')
         except Exception as e:
-            log.warning(f'Could not read file: {e}, {x}')
+            print(f'Could not read file: {e}, {x}')
         return blocks
+
+
+    def load_config(self, x=None):
+        """
+        Load ~/.ossutilconfig or ~/.tosutilconfig
+        """
+        cfg = {} #
+        try:
+            with open(x) as r:
+                for line in r:
+                    tabs = re.split('=', line.strip(), maxsplit=1)
+                    if len(tabs) < 2:
+                        continue
+                    if len(tabs[1]) < 1 or tabs[1].startswith('*'):
+                        continue
+                    cfg.update({tabs[0]:tabs[1]})
+        except Exception as e:
+            print(f'Failed reading config: {e}, {x}')
+        return cfg
 
 
     def parse_oss_info(self, x):
@@ -113,77 +236,69 @@ class OSSinfo(object):
             dict: oss info as dict
         """
         # parse text
-        if isinstance(x, str):
-            # check version
-            config = {
-                'http': None,
-                'accesskeyid': None,
-                'accesskeysecret': None,
-                'oss_path': None,
-                'endpoint': None,
-                'region': None,
-            }
-            for line in re.split('\\n', x.strip()):
-                line = line.strip()
-                if line.startswith('#') or len(line) < 20:
-                    continue
-                # single value
-                if line.startswith('http://'):
+        if not isinstance(x, str):
+            print(f'failed, parse_oss_info(x), expect str, got {type(x)}')
+            return None
+        # info
+        config = {
+            'http': None,
+            'accesskeyid': None,
+            'accesskeysecret': None,
+            'oss_path': None,
+            'endpoint': None,
+            'region': None,
+            # 'ossutil': self.ossutil,
+        }
+        # parse lines
+        lines = [
+            i.strip() for i in re.split('\\n', x) 
+            if not i.startswith('#') and len(i) > 20
+        ]
+        if len(lines) < 3:
+            # http mode # caution multiple lines, only last line saved
+            for line in lines:
+                tabs = line.strip().split(maxsplit=1)
+                v = tabs[1] if len(tabs) > 1 else line.strip()
+                if v.startswith('http://'):
                     config.update({'http':line})
-                if line.startswith('tos://'):
+                elif v[2:].startswith('s://'):
                     config.update({'oss_path': line})
-                # key:value pairs
-                tabs = re.split('[\\t\\s=：]', line.strip(), maxsplit=1) # Chinese characters
-                if len(tabs) < 2:
+        else:
+            # oss mode, in-case Chinese characters
+            tabs = [re.split('[\\t\\s=:：]', i, maxsplit=1) for i in lines]
+            tabs = [i for i in tabs if len(i) == 2]
+            for k,v in tabs:
+                # k = k.lower().replace('_', '') # format
+                k = re.sub('[^A-Za-z]', '', k.lower())
+                v = v.strip()
+                if len(v) < 2:
                     continue
-                k,v = tabs[:2]
-                k = k.lower().replace('_', '') # format
-                v = v.strip() 
-                # skip default empty values
-                if '*' in v:
-                    v = ''
-                # guess attributes
-                if v.startswith('oss://'):
-                    config.update({
-                        'oss_path': v, 
-                        'oss_type': 'oss', 
-                        'oss_config': str(Path('~/.ossutilconfig').expanduser()),
-                        'ossutil': self.ossutil,
-                    })
-                elif v.startswith('tos://'):
-                    config.update({
-                        'oss_path': v, 
-                        'oss_type': 'tos', 
-                        'oss_config': str(Path('~/.tosutilconfig').expanduser()),
-                        'ossutil': self.tosutil,
-                    })
+                if v[2:].startswith('s://'):
+                    k = 'oss_path'
                 elif 'keyid' in k or 'ak' == k:
-                    config.update({'accesskeyid': v})
-                elif 'secret' in k or 'sk' == k:
-                    config.update({'accesskeysecret': v})
+                    k = 'accesskeyid'
+                elif 'keysecret' in k or 'sk' == k:
+                    k = 'accesskeysecret'
                 elif 'endpoint' in k:
-                    config.update({'endpoint': v})
+                    k = 'endpoint'
                 elif 'region' in k:
-                    config.update({'region': v})
+                    k = 'region'
                 else:
                     pass
-            # load config from $HOME for tos/oss
-            # update endpoint, region
-            defaults = {
-                'psndata': {'region': 'shanghai', 'endpoint': 'http://oss-cn-shanghai.aliyuncs.com'},
-                'seekgene': {'region': 'beijing', 'endpoint': 'http://oss-cn-beijing.aliyuncs.com'},
-                'skyseq': {'region': 'cn-shanghai', 'endpoint': 'https://tos-cn-shanghai.volces.com'},
-            }
-            # check oss source
-            for k,v in defaults.items():
-                oss_path = config.get('oss_path', None)
-                if isinstance(oss_path, str):
-                    if k in oss_path:
-                        if config.get('region', None) is None:
-                            config.update({'region': v.get('region', None)})
-                        if config.get('endpoint', None) is None:
-                            config.update({'endpoint': v.get('endpoint', None)})
-            return config
+                config.update({k:v})
+        # pre-defined region, endpoint
+        pre_cfg = self.pre_config(config.get('oss_path', None))
+        # update ossutil, ossutilconfig
+        c_cfg = self.cmd_config(config.get('oss_path', None))
+        cfg = self.load_config(c_cfg)
+        pre_cfg.update(cfg) # all
+        # update config
+        for k,v in pre_cfg.items():
+            if k in config and config.get(k, None) is None:
+                config.update({k:v})
+        # cmd updated, see self.cmd_config()
+        config.update({'ossutil': self.ossutil})
+        return config
 
 
 class Download(object):
@@ -235,7 +350,15 @@ class Download(object):
             'region': self.region,
             'ossutil': self.ossutil,
         }
+        # update cmd
         out = all([isinstance(i, str) for i in list(opts.values())])
+        if isinstance(self.ossutil, str):
+            if not Path(self.ossutil).exists():
+                out = False
+                print(f'ossutil command not exists: {self.ossutil}')
+        else:
+            out = False
+            print(f'ossutil missing, see Download(ossutil=)')
         if not out:
             msg = '\n'.join([f'{k:<15} = {v}' for k,v in opts.items()])
             if verbose:
@@ -340,29 +463,37 @@ class Download(object):
         # 4. check output
         if result.returncode > 0:
             print(result.stdout.decode())
-            fq_list = []
+            f_list = []
         else:
             s = result.stdout.decode('utf-8')
-            # fq_list = [Path(i).name for i in re.split('\\n', s) if i.endswith('gz')]
-            # full_path of fq files, .gz 
-            fq_list = [i.split()[-1] for i in re.split('\\n', s) if i.endswith('gz')]
-            # # relative to self.oss_path
-            # fq_list = [Path(i).relative_to(self.oss_path) for i in fq_list]
+            # full size
+            ## eg:
+            ## 2023-10-18 14:01:50 +0800 CST 478748813 IA  D6BD...   oss://...
+            ss = [
+                re.search('\\s([0-9]+)\\s', i).group(1)
+                for i in re.split('\\n', s)
+                if bool(re.search('\\s([0-9]+)\\s', i))
+            ]
+            # file size
+            f_size = sum(list(map(int, ss)))
+            f_size = f'{f_size/1024**3:.1f}' # GB
+            # full_path of files, .gz 
+            f_list = [i.split()[-1] for i in re.split('\\n', s) if i.endswith('gz')]
             msg_list = []
-            if len(fq_list) > 1:
-                msg_files = [fq_list[0], '...', fq_list[-1]]
+            if len(f_list) > 1:
+                msg_files = [f_list[0], '...', f_list[-1]]
                 msg_list = [f'{i+1:>2}. {Path(k).name}' for i,k in enumerate(msg_files)]
-            msg_list.append(f'[{len(fq_list)}] fastq files found')
+            msg_list.append(f'[{len(f_list)}] fastq files, [{f_size} GB] in total')
             msg = '\n'.join(msg_list)
             print(msg)
-        return [result.returncode, fq_list] # 0=yes, 1=no
+        return [result.returncode, f_list] # 0=yes, 1=no
 
 
     def file_exists(self):
         if self.is_valid_oss(verbose=False):
-            _, fq_list = self.list_oss()
-            fq_list = [Path(i).relative_to(self.oss_path) for i in fq_list]
-            ss = [i for i in fq_list if Path(i).exists()]
+            _, f_list = self.list_oss()
+            f_list = [Path(i).relative_to(self.oss_path) for i in f_list]
+            ss = [i for i in f_list if Path(i).exists()]
             if len(ss) > 0:
                 msg = '\\n'.join(ss)
                 msg += f'\\n[{len(ss)}] files found in out_dir: {self.out_dir}'
@@ -384,7 +515,7 @@ class Download(object):
         except Exception as e:
             print(f'failed, could not write to file: {e} {cmd_txt}')
             return None
-        # show log
+        # show message
         msg = '\n'.join([
             '='*80,
             f'{"program":>14} : {"download_oss"}',
@@ -423,12 +554,12 @@ def download(**kwargs):
     """
     for oss_info in OSSinfo(**kwargs).info:
         oss_info.update({
-            'out_dir': kwargs.get('out_dir', False),
+            'out_dir': kwargs.get('out_dir', None),
             'overwrite': kwargs.get('overwrite', False),
             'dry_run': kwargs.get('dry_run', False),
         })
         dn = Download(**oss_info)
-        dn.run() 
+        dn.run()
 
 
 def get_args():

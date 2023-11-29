@@ -41,6 +41,7 @@ import subprocess
 import random
 import string
 import tempfile
+import shutil
 import hashlib # hash functions
 # import uuid # generate a random number
 from PIL import Image # pillow
@@ -575,6 +576,28 @@ def get_date(timestamp=False):
 def is_cmd(x):
     """Check if the executable command"""
     return lambda i: shutil.which(i) is not None
+
+
+def which(command):
+    """
+    shutil.which()
+    subprocess.call()
+    see: https://stackoverflow.com/a/377028/2530783
+    """
+    def is_exe(fpath):
+        return os.path.isfile(fpath) and os.access(fpath, os.X_OK)
+
+    fpath, fname = os.path.split(command)
+    if fpath:
+        if is_exe(command):
+            return command
+    else:
+        for path in os.environ.get("PATH", "").split(os.pathsep):
+            exe_file = os.path.join(path, command)
+            if is_exe(exe_file):
+                return exe_file
+
+    return None
 
 
 def unique_list(seq, sorted=True, idfun=None):
