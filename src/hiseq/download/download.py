@@ -3,7 +3,7 @@
 
 """
 Download files from different sources:
-1. OSS (aliyun, ossutil64) 
+1. OSS (aliyun, ossutil) 
 2. OSS (novogene, linuxnd, lnd)
 2. url
 """
@@ -41,7 +41,7 @@ class OSSinfo(object):
     format-5:
         oss://...
         tos://...
-    # return 
+    return
     1. list of oss_info
     2. list of http urls
     """
@@ -77,8 +77,13 @@ class OSSinfo(object):
 
     def load_oss_txt(self, x=None):
         """
-        Load oss_txt file as list
-        split by empty lines
+        Load oss_txt file and split by blank line
+
+        Args:
+            x (str): Path to oss_txt file, default from self.oss_txt
+        
+        Returns:
+            list: oss records
         """
         if x is None:
             x = self.oss_txt
@@ -100,7 +105,12 @@ class OSSinfo(object):
     def parse_oss_info(self, x):
         """
         Parse OSS key_id, key_secret, ... from string
-        return dict
+
+        Args:
+            x (str): the oss info
+
+        Returns
+            dict: oss info as dict
         """
         # parse text
         if isinstance(x, str):
@@ -201,6 +211,7 @@ class Download(object):
             'region': None,
             'ossutil': None,
             'overwrite': False,
+            'dry_run': False,
         }
         self = update_obj(self, args, force=False)
         if not isinstance(self.out_dir, str):
@@ -215,7 +226,7 @@ class Download(object):
                     print(f'Could not create dir, {e}, {self.out_dir}')
 
 
-    def is_valid_oss(self):
+    def is_valid_oss(self, verbose=True):
         opts = {
             'accesskeyid': self.accesskeyid,
             'accesskeysecret': self.accesskeysecret,
@@ -227,7 +238,8 @@ class Download(object):
         out = all([isinstance(i, str) for i in list(opts.values())])
         if not out:
             msg = '\n'.join([f'{k:<15} = {v}' for k,v in opts.items()])
-            print(msg)
+            if verbose:
+                print(msg)
         return out
 
 
@@ -274,7 +286,7 @@ class Download(object):
             print(f'file exists: {dest_file}')
         else:
             try:
-                request.urlretrieve(url, dest_file)
+                request.urlretrieve(self.http, dest_file)
             except Exception as e:
                 print(f'failed downloading url, {e}, {self.http}')
         if not Path(dest_file).exists():
@@ -282,13 +294,16 @@ class Download(object):
         return dest_file
 
 
-    def get_oss_cmd(self, subcommand='ls', options=''):
-        if self.is_valid_oss():
+    def get_oss_cmd(self, subcommand='ls', options='', verbose=False):
+        if self.is_valid_oss(verbose):
             # check ossutil command
             if not Path(self.ossutil).exists():
-                print(f'ossutil command not found: {self.ossutil}')
-                print(f'find tosutil at: "https://www.volcengine.com/docs/6349/148777"')
-                print(f'find ossutil at: "https://help.aliyun.com/zh/oss/developer-reference/oss-tools"')
+                msg = '\n'.join([
+                    f'ossutil command not found: {self.ossutil}',
+                    f'find tosutil at: "https://www.volcengine.com/docs/6349/148777"',
+                    f'find ossutil at: "https://help.aliyun.com/zh/oss/developer-reference/oss-tools"'
+                ])
+                print(msg)
                 return None
             # tos require 'region'
             if self.oss_path.startswith('tos://'):
@@ -315,38 +330,53 @@ class Download(object):
             return cmd
 
 
-    # use ossutil command-line tool
-    def list_oss(self):
-        cmd = self.get_oss_cmd('ls')
+    def list_oss(self, verbose=False):
+        cmd = self.get_oss_cmd('ls', verbose=verbose)
         if not isinstance(cmd, str):
-            print(f'invalid oss_info')
+            print(f'[failed] invalid oss_info')
             return 1 # exit code
         # 3. run
         result = subprocess.run(cmd.split(), stdout=subprocess.PIPE)
         # 4. check output
         if result.returncode > 0:
             print(result.stdout.decode())
+            fq_list = []
         else:
             s = result.stdout.decode('utf-8')
-            fq_list = [Path(i).name for i in re.split('\\n', s) if i.endswith('gz')]
-            msg_list = [f'{i+1:>02}. {k}' for i,k in enumerate(fq_list)]
+            # fq_list = [Path(i).name for i in re.split('\\n', s) if i.endswith('gz')]
+            # full_path of fq files, .gz 
+            fq_list = [i.split()[-1] for i in re.split('\\n', s) if i.endswith('gz')]
+            # # relative to self.oss_path
+            # fq_list = [Path(i).relative_to(self.oss_path) for i in fq_list]
+            msg_list = []
+            if len(fq_list) > 1:
+                msg_files = [fq_list[0], '...', fq_list[-1]]
+                msg_list = [f'{i+1:>2}. {Path(k).name}' for i,k in enumerate(msg_files)]
             msg_list.append(f'[{len(fq_list)}] fastq files found')
             msg = '\n'.join(msg_list)
             print(msg)
-        return result.returncode # 0=yes, 1=no
+        return [result.returncode, fq_list] # 0=yes, 1=no
 
 
-    # use ossutil command-line tool
-    def download_oss(self, subcommand='cp'):
+    def file_exists(self):
+        if self.is_valid_oss(verbose=False):
+            _, fq_list = self.list_oss()
+            fq_list = [Path(i).relative_to(self.oss_path) for i in fq_list]
+            ss = [i for i in fq_list if Path(i).exists()]
+            if len(ss) > 0:
+                msg = '\\n'.join(ss)
+                msg += f'\\n[{len(ss)}] files found in out_dir: {self.out_dir}'
+                print(msg)
+            return len(ss) > 0
+
+
+    def download_oss(self, subcommand='cp', verbose=False):
         """
         Download OSS files using ossutil/tosutil
         subcommand: cp, sync
         """
-        if self.list_oss() > 0: # return code
-            print(f'failed to list oss info: {self.oss_path}')
-            return None
         # build command
-        cmd = self.get_oss_cmd('cp', options='-r')
+        cmd = self.get_oss_cmd('cp', options='-r', verbose=verbose)
         cmd_txt = str(Path(self.out_dir) / 'run.sh')
         try:
             with open(cmd_txt, 'wt') as w:
@@ -364,13 +394,13 @@ class Download(object):
             '='*80,
         ])
         print(msg)
-        # run
-        try:
+        # list files
+        if self.file_exists() and not self.overwrite:
+            print(f'file exists: {self.out_dir}')
+        elif not self.dry_run:
             result = subprocess.run(cmd.split(), stderr=subprocess.PIPE)
             if result.returncode > 0:
                 print(f'failed, ossutil {subcommand}, {result.stderr}')
-        except Exception as e:
-            print(f'ossutil failed, {e}')
 
 
     def run(self):
@@ -380,23 +410,32 @@ class Download(object):
             self.download_oss()
 
 
-def download(oss_txt, out_dir, **kwargs):
-    kwargs.update({'oss_txt': oss_txt, 'out_dir': out_dir})
+def download(**kwargs):
+    """
+    Download files using oss or http
+
+    Args:
+        oss_txt (str): A file contains oss info or http url
+        out_dir (str): Ouput directory, default [pwd]
+
+    Returns:
+        None
+    """
     for oss_info in OSSinfo(**kwargs).info:
         oss_info.update({
-            'out_dir': out_dir, 
+            'out_dir': kwargs.get('out_dir', False),
             'overwrite': kwargs.get('overwrite', False),
+            'dry_run': kwargs.get('dry_run', False),
         })
-        # print('!A-1', oss_info)
         dn = Download(**oss_info)
         dn.run() 
 
 
 def get_args():
     example = '\n'.join([
-        'Download fq data from companies, OSS, ...',
+        'Download fq data from OSS or http ...',
         '1. download oss data',
-        '$ python download.py -i oss.txt -o out_dir',
+        '$ python download.py -s oss.txt -o out_dir',
     ])
     parser = argparse.ArgumentParser(
         prog='download',
@@ -412,98 +451,23 @@ def get_args():
     parser.add_argument('-e', '--endpoint', dest="endpoint", default=None,
         help='specify the endpoint, eg: http://oss-cn-shanghai.aliyuncs.com, default [None]')
     parser.add_argument('-t', '--ossutil', dest='ossutil',
-        default='/data/biosoft/ossutil/ossutil64',
-        help='ossutil command-line tool, default: [/data/biosoft/ossutil/ossutil64]')
+        default='/data/biosoft/ossutil/ossutil',
+        help='ossutil command-line tool, default: [/data/biosoft/ossutil/ossutil]')
     parser.add_argument('-i', '--AccessKeyId', dest='accesskeyid', default=None,
         help='The AccessKeyId, default: [None]')
     parser.add_argument('-k', '--AccessKeySecret', dest='accesskeysecret', default=None,
         help='The AccessKeySecret, default: [None]')
     parser.add_argument('-O', '--overwrite', action='store_true',
         help='Overwrite exists files')
+    parser.add_argument('-n', '--dry-run', dest='dry_run', action='store_true',
+        help='Do not download files, just check the oss_info by ls command')
     return parser
 
 
 def main():
     args = vars(get_args().parse_args())
-    oss_txt = args.pop('oss_txt', None)
-    out_dir = args.pop('out_dir', None)
-    download(oss_txt, out_dir, **args)
+    download(**args)
 
 
 if __name__ == '__main__':
     main()
-
-# EOF
-
-
-# def parse_oss_info(self, x):
-#     """
-#     Parse OSS key_id, key_secret, ... from string
-#     return dict
-#     """
-#     # check version
-#     config = {
-#         'http': None,
-#         'accesskeyid': None,
-#         'accesskeysecret': None,
-#         'oss_path': None,
-#         'endpoint': None,
-#         'region': None,
-#     }
-#     # parse text
-#     try:
-#         with open(x) as r:
-#             for line in r:
-#                 if line.startswith('#') or len(line) < 4:
-#                     continue
-#                 if 'http://geneplus' in line:
-#                     config.update({'http':line.strip()})
-#                 tabs = re.split('[\\t\\s=：]', line.strip(), maxsplit=1) # chinese characters
-#                 if len(tabs) < 2:
-#                     continue
-#                 k,v = tabs[:2]
-#                 k = k.lower().replace('_', '')
-#                 # skip default empty values
-#                 if '*' in v:
-#                     v = ''
-#                 # guess attributes
-#                 if 'oss://' in line:
-#                     oss_config = str(Path('~/.ossutilconfig').expanduser())
-#                     config.update({'oss_path': v, 'oss_type': 'oss', 'oss_config': oss_config})
-#                 elif 'tos://' in line:
-#                     oss_config = str(Path('~/.tosutilconfig').expanduser())
-#                     config.update({'oss_path': v, 'oss_type': 'tos', 'oss_config': oss_config})
-#                 elif 'keyid' in k or 'ak' == k:
-#                     config.update({'accesskeyid': v})
-#                 elif 'secret' in k or 'sk' == k:
-#                     config.update({'accesskeysecret': v})
-#                 elif 'endpoint' in k:
-#                     config.update({'endpoint': v})
-#                 elif 'region' in k:
-#                     config.update({'region': v})
-#                 else:
-#                     pass
-#     except FileNotFoundError as e:
-#         log.warning(f'File not found: {e}, {x}')
-#     except Exception as e:
-#         log.warning(f'Could not read file: {e}, {x}')
-#     # load config from $HOME for tos/oss
-#     # update endpoint, region
-#     defaults = {
-#         'psndata': {'region': 'shanghai', 'endpoint': 'http://oss-cn-shanghai.aliyuncs.com'},
-#         'seekgene': {'region': 'beijing', 'endpoint': 'http://oss-cn-beijing.aliyuncs.com'},
-#         'skyseq': {'region': 'cn-shanghai', 'endpoint': 'https://tos-cn-shanghai.volces.com'},
-#     }
-#     # check oss source
-#     for k,v in defaults.items():
-#         oss_path = config.get('oss_path', None)
-#         if isinstance(oss_path, str):
-#             if k in oss_path:
-#                 if config.get('region', None) is None:
-#                     config.update({'region': v.get('region', None)})
-#                 if config.get('endpoint', None) is None:
-#                     config.update({'endpoint': v.get('endpoint', None)})
-#     # pass
-#     return config
-
-
