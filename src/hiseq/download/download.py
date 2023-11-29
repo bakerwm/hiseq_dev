@@ -290,7 +290,7 @@ class OSSinfo(object):
         pre_cfg = self.pre_config(config.get('oss_path', None))
         # update ossutil, ossutilconfig
         c_cfg = self.cmd_config(config.get('oss_path', None))
-        cfg = self.load_config(c_cfg)
+        cfg = self.load_config(c_cfg) if Path(c_cfg).exists() else {}        
         pre_cfg.update(cfg) # all
         # update config
         for k,v in pre_cfg.items():
