@@ -219,7 +219,13 @@ class OSSinfo(object):
                         continue
                     if len(tabs[1]) < 1 or tabs[1].startswith('*'):
                         continue
-                    cfg.update({tabs[0]:tabs[1]})
+                    # parse key
+                    k = re.sub('[^A-Za-z]', '', tabs[0].lower()) #
+                    if k == 'ak':
+                        k = 'accesskeyid'
+                    elif k == 'sk':
+                        k = 'accesskeysecret'
+                    cfg.update({k:tabs[1]})
         except Exception as e:
             print(f'Failed reading config: {e}, {x}')
         return cfg
@@ -290,7 +296,8 @@ class OSSinfo(object):
         pre_cfg = self.pre_config(config.get('oss_path', None))
         # update ossutil, ossutilconfig
         c_cfg = self.cmd_config(config.get('oss_path', None))
-        cfg = self.load_config(c_cfg) if Path(c_cfg).exists() else {}        
+        cfg = {} # config skipped !!! to-do
+        # cfg = self.load_config(c_cfg) if Path(c_cfg).exists() else {}
         pre_cfg.update(cfg) # all
         # update config
         for k,v in pre_cfg.items():
