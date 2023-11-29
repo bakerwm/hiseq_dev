@@ -382,7 +382,7 @@ class Download(object):
             with open(cmd_txt, 'wt') as w:
                 w.write(cmd+'\n')
         except Exception as e:
-            print(f'failed, could not write to file: {cmd_txt}')
+            print(f'failed, could not write to file: {e} {cmd_txt}')
             return None
         # show log
         msg = '\n'.join([
