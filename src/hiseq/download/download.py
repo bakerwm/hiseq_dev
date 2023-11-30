@@ -18,6 +18,7 @@ from dateutil import tz
 from datetime import datetime
 # from hiseq.utils.utils import update_obj, get_date
 
+from ossutil import TOS, OSS
 
 def update_obj(obj, d, force=True, remove=False):
     """
@@ -548,6 +549,126 @@ class Download(object):
             self.download_oss()
 
 
+class Download2(object):
+    """
+    Download files from url or OSS (Aliyun)    
+    see https://help.aliyun.com/document_detail/31837.html
+    for more details about public endpoints for Aliyun
+    shanghai http://oss-cn-shanghai.aliyuncs.com
+    beijing http://oss-cn-beijing.aliyuncs.com
+    ...
+    """
+    def __init__(self, **kwargs):
+        self = update_obj(self, kwargs, force=True)
+        self.init_args()
+
+
+    def init_args(self):
+        args = {
+            'out_dir': None,
+            'http': None,
+            'accesskeyid': None,
+            'accesskeysecret': None,
+            'oss_path': None,
+            'endpoint': None,
+            'region': None,
+            'ossutil': None,
+            'overwrite': False,
+            'dry_run': False,
+            'maxspeed': 10, # KB/s
+        }
+        self = update_obj(self, args, force=False)
+        if not isinstance(self.out_dir, str):
+            self.out_dir = str(Path.cwd() / 'from_illumina')
+        self.out_dir = str(Path(self.out_dir).expanduser().absolute())
+        # self.is_http = isinstance(self.http, str)
+        if isinstance(self.http, str) or self.is_valid_oss():
+            if not Path(self.out_dir).exists():
+                try:
+                    Path(self.out_dir).mkdir(parents=True, exist_ok=True)
+                except Exception as e:
+                    print(f'Could not create dir, {e}')
+
+
+    def is_valid_oss(self,):
+        opts = {
+            'accesskeyid': self.accesskeyid,
+            'accesskeysecret': self.accesskeysecret,
+            'oss_path': self.oss_path,
+            'endpoint': self.endpoint,
+            'region': self.region,
+        }
+        return all([isinstance(i, str) for i in list(opts.values())])
+
+
+    def get_url_name(self, x):
+        """
+        get the filename from url
+        http://xxx.com/kefu%2Fxxx2.tar?Expires=1xx&OSSAccessKeyId=xxx&Signature=xxx
+        re.sub('^\w+\%|\?.*$', '', b)
+        """
+        if isinstance(x, str):
+            xname = re.sub('?Expires=.*', '', Path(x).name) # fix
+            return re.sub('[^A-Za-z0-9\\_\\-\\.]', '', xname)
+            # return re.sub('^\w+\%|\?.*$', '', os.path.basename(x))
+
+
+    def download_http(self):
+        """
+        Download url and save to file    
+        from urllib import request
+        # Define the remote file to retrieve
+        remote_url = 'https://www.google.com/robots.txt'
+        # Define the local filename to save data
+        local_file = 'local_copy.txt'
+        # Download remote and save locally
+        request.urlretrieve(remote_url, local_file)
+        """
+        if not isinstance(self.http, str):
+            print(f'skipped, http is not str, got {type(self.http)}')
+            return None
+        filename = self.get_url_name(self.http)
+        dest_file = str(Path(self.out_dir) / filename)
+        # show msg    
+        msg = '\n'.join([
+            '='*80,
+            f'{"Program":>14} : {"download_http"}',
+            f'{"Date":>14} : {get_date()}',
+            f'{"url":>14}: {self.download_http}',
+            f'{"out_dir":>14}: {self.out_dir}',
+            '='*80,
+        ])
+        print(msg)
+        # check_dir(self.out_dir)
+        if Path(dest_file).exists() and not self.overwrite:
+            print(f'file exists: {dest_file}')
+        else:
+            try:
+                request.urlretrieve(self.http, dest_file)
+            except Exception as e:
+                print(f'failed downloading url, {e}, {self.http}')
+        if not Path(dest_file).exists():
+            print(f'file not found: {dest_file}')
+        return dest_file
+
+
+    def run(self):
+        if self.is_valid_oss():
+            args = self.__dict__.copy() #
+            if self.oss_path.startswith('tos'):
+                TOS(**args).download()
+            elif self.oss_path.startswith('oss'):
+                OSS(**args).download()
+            else:
+                print(f'unknown oss_path: {self.oss_path}')
+                pass
+        elif isinstance(self.http, str):
+            print('!A-3')
+            self.download_http()
+        else:
+            pass
+
+
 def download(**kwargs):
     """
     Download files using oss or http
@@ -564,8 +685,12 @@ def download(**kwargs):
             'out_dir': kwargs.get('out_dir', None),
             'overwrite': kwargs.get('overwrite', False),
             'dry_run': kwargs.get('dry_run', False),
+            'maxspeed': kwargs.get('maxspeed', 10), # 10MB/s
         })
-        dn = Download(**oss_info)
+        if isinstance(oss_info.get('ossutil', None), str):
+            dn = Download(**oss_info)
+        else:
+            dn = Download2(**oss_info)
         dn.run()
 
 
@@ -599,6 +724,8 @@ def get_args():
         help='Overwrite exists files')
     parser.add_argument('-n', '--dry-run', dest='dry_run', action='store_true',
         help='Do not download files, just check the oss_info by ls command')
+    parser.add_argument('--maxspeed', type=int, default=1000, 
+        help='set speedlimit KB/s, default [1000]')
     return parser
 
 
