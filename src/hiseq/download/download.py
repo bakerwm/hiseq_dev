@@ -687,11 +687,12 @@ def download(**kwargs):
             'dry_run': kwargs.get('dry_run', False),
             'maxspeed': kwargs.get('maxspeed', 10), # 10MB/s
         })
-        if isinstance(oss_info.get('ossutil', None), str):
-            dn = Download(**oss_info)
-        else:
-            dn = Download2(**oss_info)
-        dn.run()
+        Dnd = Download2
+        ossutil = oss_info.get('ossutil', None)
+        if isinstance(ossutil, str):
+            if Path(ossutil).exists():
+                Dnd = Download
+        Dnd(**oss_info).run()
 
 
 def get_args():
