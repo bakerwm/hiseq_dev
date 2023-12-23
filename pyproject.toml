@@ -41,6 +41,8 @@ dependencies = [
     "toml == 0.10.2",
     "trackhub == 0.2.4",
     "xopen == 1.5.0",
+    "tos == 2.6.5",
+    "oss2 == 2.18.3",
 ]
 ## Conda requirements.txt
 # STAR 2.5.2a

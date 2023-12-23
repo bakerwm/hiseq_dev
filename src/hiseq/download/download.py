@@ -18,7 +18,7 @@ from dateutil import tz
 from datetime import datetime
 # from hiseq.utils.utils import update_obj, get_date
 
-from ossutil import TOS, OSS
+from hiseq.download.ossutil import TOS, OSS
 
 def update_obj(obj, d, force=True, remove=False):
     """
