@@ -516,7 +516,7 @@ def hiseq_bam2bw(x, hiseq_type='_r1'):
         'normalizeUsing': 'RPGC',
         'overwrite': a.overwrite,
         'genome_size': None, # a.genome_size,
-        'extendReads': True, # a.extend_reads, # force !!!
+        'extendReads': 150, # a.extend_reads, # force !!!
         'centerReads': True, # a.center_reads, # force !!!
     }
     Bam2bw(**args).run()
