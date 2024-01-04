@@ -47,6 +47,7 @@ def get_atac_files(x, smp_name, fq1, fq2):
     config_dir = dd.get('config_dir', x)
     clean_dir = dd.get('clean_dir', x)
     bam_dir = dd.get('bam_dir', x)
+    bw_dir = dd.get('bw_dir', x)
     peak_dir = dd.get('peak_dir', x)
     report_dir = dd.get('report_dir', x)
     d = {
@@ -57,7 +58,7 @@ def get_atac_files(x, smp_name, fq1, fq2):
         'pcr_dup_json': os.path.join(bam_dir, 'pcr_dup.json'),
         'bam_raw': os.path.join(bam_dir, smp_name+'.raw.bam'),
         'bam': os.path.join(bam_dir, smp_name+'.bam'),
-        'bw': os.path.join(bam_dir, smp_name+'.bigWig'),
+        'bw': os.path.join(bw_dir, smp_name, smp_name+'.bigWig'),
         'peak': os.path.join(peak_dir, smp_name+'_peaks.narrowPeak'),
         'peak_seacr': os.path.join(peak_dir, smp_name+'.stringent.bed'),
         'peak_seacr_top001': os.path.join(peak_dir, smp_name+'.top0.01.stringent.bed'),
