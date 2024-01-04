@@ -21,7 +21,7 @@ dependencies = [
     "biopython >= 1.79",
     "crcmod == 1.7",
     "cutadapt == 4.1",
-    "deeptools == 3.5.1",
+    "deeptools == 3.5.4",
     "docutils",
     "ffq == 0.2.1",
     "htseq == 2.0.2",
