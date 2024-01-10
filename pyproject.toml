@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "hiseq"
-version = "0.0.5"
+version = "0.0.6"
 authors = [
   { name="wm", email="wm@wm.com" },
 ]
@@ -20,69 +20,37 @@ classifiers = [
 dependencies = [
     "biopython >= 1.79",
     "crcmod == 1.7",
-    "cutadapt == 4.1",
-    "deeptools == 3.5.4",
-    "docutils",
+    "cutadapt == 4.6",
+    "deeptools == 3.5.3",
     "ffq == 0.2.1",
     "htseq == 2.0.2",
     "idr == 0.0.1",
     "numpy >= 1.20.2",
     "openpyxl >= 3.0.10",
+    "oss2 == 2.18.3",
     "pandas >= 1.2.0",
-    "pyBigWig == 0.3.18",
     "pybedtools == 0.9.0",
+    "pybigwig == 0.3.18",
     "pyfastx == 0.8.4",
     "pysam == 0.19.1",
-    "python-dateutil == 2.8.2",
     "python-Levenshtein >= 0.12.2",
     "pyyaml == 6.0",
     "scikit-learn == 1.1.1",
     "scipy == 1.8.1",
     "toml == 0.10.2",
-    "trackhub == 0.2.4",
-    "xopen == 1.5.0",
     "tos == 2.6.5",
-    "oss2 == 2.18.3",
+    "trackhub == 0.2.4",
 ]
-## Conda requirements.txt
-# STAR 2.5.2a
-# bedtools >= 2.30.0
-# bowtie2 >= 2.4.5
-# bowtie >= 1.3.1
-# bwa = 0.7.17
-# fastqc = 0.11.9
-# fastx_toolkit = 0.0.14
-# hisat2 = 2.2.1
-# kallisto = 0.48.0
-# macs2 = 2.2.7.1
-# pandoc >= 2.18
-# parafly = r2013_01_21
-# picard >= 2.27.4
-# pigz >= 2.6
-# salmon >= 0.6.0 # ???
-# sambamba >= 0.8.2
-# samtools >= 1.6
-# seacr 1.3 # ?
-# subread 2.0.0 # ?
-# wiggletools = 1.2.11
-# star=2.5.2a bedtools>=2.30 bowtie2>=2.4 bowtie>=1.3.0 bwa>=0.7.17 fastqc=0.11.9 
-# fastx_toolkit=0.0.14 hisat2>=2.2 kallisto=0.48 pandoc>=2.18 parafly=r2013_01_21 picard>=2.27 macs2=2.2.7.1
-# pigz>=2.6 salmon>=0.6 sambamba>=0.8 samtools>=1.6 seacr=1.3 subread>=2.0 wiggletools>=1.2.11
-
 # INSTALL
 # # 1. create conda env 'hiseq'
-# $ conda create -n hiseq -c bioconda -c conda-forge -y python=3.9 r-base=4.3.1
-# $ conda activate hiseq # 
-# # 2. install required tools
-# $ conda install -c bioconda -c conda-forge -y star=2.7.11a "bedtools>=2.30" "bowtie2>=2.4"  "bowtie>=1.3.0" "bwa>=0.7.17" "fastqc>=0.11.9"
-# $ conda install -c bioconda -c conda-forge -y fastx_toolkit=0.0.14 "hisat2>=2.2" "kallisto=0.48" "pandoc>=2.18" "parafly=r2013_01_21" "picard>=2.27" "macs2>=2.2.7.1"
-# $ conda install -c bioconda -c conda-forge -y "pigz>=2.6" "salmon>=0.6" "sambamba>=0.8" "samtools>=1.6" "seacr=1.3" "subread>=2.0" "wiggletools>=1.2.11"
-# # 3. install hiseq package
+# $ conda env create -f hiseq.yml
+# $ conda activate hiseq
+# # 2. install hiseq
 # $ cd /data/biosoft/hiseq_dev/
 # $ pip install .
-
-###
-# idr 2.0.4.2
+#
+## Salmon
+## Install salmon manually
 
 [project.urls]
 "Homepage" = "https://github.com/pypa/sampleproject"
