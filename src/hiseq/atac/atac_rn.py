@@ -118,6 +118,8 @@ class AtacRnConfig(object):
         self = update_obj(self, args_init, force=False)
         self.hiseq_type = 'atac_rn'
         self.out_dir = fix_out_dir(self.out_dir)
+        if self.gene_bed is None:
+            self.gene_bed = Genome(self.genome).bed
         self.init_fx()
         self.init_index()
         self.init_files()
