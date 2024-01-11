@@ -5,10 +5,10 @@
 This is the main script for hiseq
 """
 
-__author__ = 'Ming Wang'
-__email__ = 'wangm08 at hotmail.com'
-__date__ = '2021-05-20'
-__version__ = '1.0.1'
+__author__ = "Ming Wang"
+__email__ = "wangm08 at hotmail.com"
+__date__ = "2021-05-20"
+__version__ = "1.0.1"
 
 
 import os
@@ -86,7 +86,6 @@ from hiseq.cnr.cnr import Cnr
 # from hiseq.get_trackhub.get_trackhub import get_args as add_trackhub_args
 
 
-
 # # to-be-deprecated: replaced by specific get_args() in each command
 # from hiseq.utils.argsParser import add_quant_args, add_peak_args, add_motif_args, \
 #     add_rnaseq_args2, add_deseq_pair_args, add_go_args,\
@@ -104,6 +103,7 @@ class Hiseq(object):
     The 1st-level of command, choose which sub-command to use
     qc, trim, align, quant, peak, motif, report, ... (to be continued)
     """
+
     def __init__(self):
         usage = """ hiseq <command> [<args>]
 
@@ -143,19 +143,18 @@ class Hiseq(object):
         download     Download files
     """
         parser = argparse.ArgumentParser(
-            prog = 'hiseq',
-            description = 'A collection of tools for HiSeq data',
-            epilog = '',
-            usage = usage,
+            prog="hiseq",
+            description="A collection of tools for HiSeq data",
+            epilog="",
+            usage=usage,
         )
-        parser.add_argument('command', help='Subcommand to run')
+        parser.add_argument("command", help="Subcommand to run")
         args = parser.parse_args(sys.argv[1:2])
         if not hasattr(self, args.command):
-            log.error('unknown command: {}'.format(args.command))
+            log.error("unknown command: {}".format(args.command))
             parser.print_help()
             sys.exit(1)
         getattr(self, args.command)()
-
 
     def init_args(self, p):
         """
@@ -170,27 +169,22 @@ class Hiseq(object):
             out = None
         return out
 
-
-## sub-modules
+    ## sub-modules
     def download(self):
         args = self.init_args(add_download_args())
         download(**args)
-
 
     def sheet(self):
         args = self.init_args(add_sheet_args())
         SampleSheet(**args).run()
 
-
     def demx(self):
         args = self.init_args(add_demx_args())
         Demx(**args).run()
 
-
     def demx2(self):
         args = self.init_args(add_demx2_args())
         Demx2(**args).run()
-
 
     def trim(self):
         args = self.init_args(add_trim_args())
@@ -200,52 +194,42 @@ class Hiseq(object):
         args = self.init_args(add_fastqc_args())
         FastQC(**args).run()
 
-
     def sample(self):
         args = self.init_args(add_sample_args())
         Sample(**args).run()
-
 
     def bam2bw(self):
         args = self.init_args(add_bam2bw_args())
         Bam2bw(**args).run()
 
-
     def bam2cor(self):
         args = self.init_args(add_bam2cor_args())
         bam2cor(**args)
-
 
     def basecontent(self):
         args = self.init_args(add_base_content_args())
         BaseContent(**args).run()
 
-
     def run_trackhub(self):
         args = self.init_args(add_run_trackhub_args())
         TrackHub(**args).run()
-
 
     def align(self):
         args = self.init_args(add_align_args())
         Align(**args).run()
 
-
     def list(self):
         args = self.init_args(add_hiseq_list_args())
-        out = hiseq_list(args.pop('x', None), **args)
-
+        out = hiseq_list(args.pop("x", None), **args)
 
     def merge(self):
         args = self.init_args(add_hiseq_merge_args())
         HiSeqMerge(**args).run()
 
-
-# pipeline
+    # pipeline
     def atac(self):
         args = self.init_args(add_atac_args())
         Atac(**args).run()
-
 
     def cnr(self):
         args = self.init_args(add_cnr_args())
@@ -411,7 +395,7 @@ def main():
     Hiseq()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
 
 #

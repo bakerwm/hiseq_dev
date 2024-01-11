@@ -26,7 +26,11 @@ from hiseq.align.star import Star
 from hiseq.align.salmon import Salmon
 from hiseq.utils.hiseq_utils import is_supported
 from hiseq.align.align_index import AlignIndex, fetch_index
-from hiseq.align.align_args import get_args_io1, get_args_index1, get_args_align
+from hiseq.align.align_args import (
+    get_args_io1,
+    get_args_index1,
+    get_args_align,
+)
 
 
 class AlignR1(object):
@@ -35,45 +39,44 @@ class AlignR1(object):
     return: bam, unmap-1, unmap-2
     save: log, stat, ...
     """
+
     def __init__(self, **kwargs):
         self = update_obj(self, kwargs, force=True)
         self.init_index()
 
-
     def init_index(self):
         args_init = {
-            'aligner': 'bowtie',
-            'index': None,
-            'genome': None,
-            'genome_path': None,
+            "aligner": "bowtie",
+            "index": None,
+            "genome": None,
+            "genome_path": None,
         }
         self = update_obj(self, args_init, force=False)
         # priority: index > genome
         if AlignIndex(self.index, self.aligner).is_valid():
             pass
-        elif is_supported(self.genome, key='genome'):
+        elif is_supported(self.genome, key="genome"):
             self.index = fetch_index(
                 self.genome, aligner=self.aligner, genome_path=self.genome_path
             )
         else:
-            raise ValueError('check -x, -g; no index found')
-
+            raise ValueError("check -x, -g; no index found")
 
     def run(self):
         ad = {
-            'bowtie': Bowtie,
-            'bowtie2': Bowtie2,
-            'star': Star,
-            'salmon': Salmon,
-            'hisat2': Hisat2,
-#             'bwa': BWA,
-#             'kallisto': Kallisto,
+            "bowtie": Bowtie,
+            "bowtie2": Bowtie2,
+            "star": Star,
+            "salmon": Salmon,
+            "hisat2": Hisat2,
+            #             'bwa': BWA,
+            #             'kallisto': Kallisto,
         }
         align = ad.get(self.aligner.lower(), None)
         if align is None:
-            raise ValueError('unknown aligner: {}'.format(self.aligner))
+            raise ValueError("unknown aligner: {}".format(self.aligner))
         args = self.__dict__.copy()
-        return align(**args).run() # bam, unmap-1, unmap-2
+        return align(**args).run()  # bam, unmap-1, unmap-2
         # report ?
 
 
@@ -81,11 +84,11 @@ def get_args():
     parser = get_args_index1(get_args_io1())
     return get_args_align(parser)
 
+
 def main():
     args = vars(get_args().parse_args())
     AlignR1(**args).run()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
-   

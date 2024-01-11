@@ -9,6 +9,7 @@ analysis-module:
 
 
 import os
+
 # import sys
 # import pathlib
 # import shutil
@@ -23,13 +24,24 @@ from hiseq.cnr.cnr_args import get_args_fast
 from hiseq.atac.atac_args import get_args_atac_rn
 from hiseq.atac.atac_files import get_atac_dirs, get_atac_files
 from hiseq.atac.atac_utils import (
-    hiseq_merge_trim, hiseq_merge_bam, hiseq_copy_r1, hiseq_call_peak, 
-    hiseq_bam2bw, hiseq_pcr_dup
+    hiseq_merge_trim,
+    hiseq_merge_bam,
+    hiseq_copy_r1,
+    hiseq_call_peak,
+    hiseq_bam2bw,
+    hiseq_pcr_dup,
 )
 from hiseq.atac.atac_qc import (
-    qc_trim_summary, qc_align_summary, qc_lendist, qc_frip, 
-    qc_tss_enrich, qc_genebody_enrich, qc_bam_cor, qc_peak_idr, 
-    qc_peak_overlap, qc_bam_fingerprint
+    qc_trim_summary,
+    qc_align_summary,
+    qc_lendist,
+    qc_frip,
+    qc_tss_enrich,
+    qc_genebody_enrich,
+    qc_bam_cor,
+    qc_peak_idr,
+    qc_peak_overlap,
+    qc_bam_fingerprint,
 )
 from hiseq.cnr.cnr_r1 import CnrR1
 from hiseq.report.hiseq_report import HiSeqRpt
@@ -41,25 +53,25 @@ class CnrRn(object):
         args_local = CnrRnConfig(**self.__dict__)
         self = update_obj(self, args_local.__dict__, force=True)
         # self.init_files()
-        self.bam_list = list_hiseq_file(self.project_dir, 'bam', 'r1')
-        self.bw_list = list_hiseq_file(self.project_dir, 'bw', 'r1')
-        self.peak_list = list_hiseq_file(self.project_dir, 'peak', 'r1')
+        self.bam_list = list_hiseq_file(self.project_dir, "bam", "r1")
+        self.bw_list = list_hiseq_file(self.project_dir, "bw", "r1")
+        self.peak_list = list_hiseq_file(self.project_dir, "peak", "r1")
         Config().dump(self.__dict__, self.config_yaml)
-
 
     def run_fx_r1(self, x):
         args = self.__dict__.copy()
-        i = self.fq1.index(x) # index
-        args.update({
-            'fq1': x,
-            'fq2': self.fq2[i],
-            'smp_name': self.smp_name_list[i],
-            'rep_list': None,
-            'build_design': False,
-            'design': None,
-        })
+        i = self.fq1.index(x)  # index
+        args.update(
+            {
+                "fq1": x,
+                "fq2": self.fq2[i],
+                "smp_name": self.smp_name_list[i],
+                "rep_list": None,
+                "build_design": False,
+                "design": None,
+            }
+        )
         CnrR1(**args).run()
-
 
     def run_fx_rn(self):
         if self.parallel_jobs > 1 and len(self.fq1) > 1:
@@ -68,35 +80,34 @@ class CnrRn(object):
         else:
             [self.run_fx_r1(i) for i in self.fq1]
 
-
     def run(self):
         # 1. run r1
         self.run_fx_rn()
         # 2. run rn
         x = self.project_dir
         if len(self.rep_list) == 1:
-            log.info('cnr_rn() skipped, only 1 rep found')
+            log.info("cnr_rn() skipped, only 1 rep found")
             hiseq_copy_r1(x)
             # cnr_merge_bam(self.project_dir, 'rn') # copy bam, qc_dir files
         else:
-            hiseq_merge_trim(x, '_rn')
-            hiseq_merge_bam(x, '_rn')
-            hiseq_pcr_dup(x, '_rn')
-            hiseq_call_peak(x, '_rn')
-            hiseq_call_peak(x, '_rn')
+            hiseq_merge_trim(x, "_rn")
+            hiseq_merge_bam(x, "_rn")
+            hiseq_pcr_dup(x, "_rn")
+            hiseq_call_peak(x, "_rn")
+            hiseq_call_peak(x, "_rn")
             # qc_trim(x, '_rn')
             # qc_align(x, '_rn')
-            qc_lendist(x, '_rn')
-            qc_frip(x, '_rn')
+            qc_lendist(x, "_rn")
+            qc_frip(x, "_rn")
             if not self.fast_mode:
-                hiseq_bam2bw(x, '_rn')
-                qc_tss_enrich(x, '_rn')
-                qc_genebody_enrich(x, '_rn')
-                qc_bam_fingerprint(x, '_rn')
+                hiseq_bam2bw(x, "_rn")
+                qc_tss_enrich(x, "_rn")
+                qc_genebody_enrich(x, "_rn")
+                qc_bam_fingerprint(x, "_rn")
             # specific for rn
-            qc_bam_cor(x, '_rn')
-            qc_peak_idr(x, '_rn')
-            qc_peak_overlap(x, '_rn')
+            qc_bam_cor(x, "_rn")
+            qc_peak_idr(x, "_rn")
+            qc_peak_overlap(x, "_rn")
         # 3. report
         HiSeqRpt(x, overwrite=self.overwrite).run()
 
@@ -106,26 +117,24 @@ class CnrRnConfig(object):
         self = update_obj(self, kwargs, force=True)
         self.init_args()
 
-
     def init_args(self):
         args_init = {
-            'aligner': 'bowtie2',
-            'fq1': None,
-            'fq2': None,
-            'out_dir': None,
-            'smp_name': None,
-            'smp_name_list': None,
+            "aligner": "bowtie2",
+            "fq1": None,
+            "fq2": None,
+            "out_dir": None,
+            "smp_name": None,
+            "smp_name_list": None,
         }
         self = update_obj(self, args_init, force=False)
-        self.hiseq_type = 'cnr_rn'
+        self.hiseq_type = "cnr_rn"
         self.out_dir = fix_out_dir(self.out_dir)
         if self.gene_bed is None:
             self.gene_bed = Genome(self.genome).bed
         self.init_fx()
         self.init_index()
         self.init_files()
-        
-    
+
     def init_fx(self):
         """
         required:
@@ -134,41 +143,49 @@ class CnrRnConfig(object):
         """
         flag_err = True
         if not check_fx_args(self.fq1, self.fq2):
-            raise ValueError('fq1, fq2 not valid')
+            raise ValueError("fq1, fq2 not valid")
         self.fq1 = file_abspath(self.fq1)
         self.fq2 = file_abspath(self.fq2)
         self.is_paired = check_fx_paired(self.fq1, self.fq2)
         # auto: sample names
-        self.smp_name = fx_name(self.fq1[0], fix_pe=self.is_paired, fix_rep=True, fix_unmap=True)
-        self.smp_name_list = fx_name(self.fq1, fix_pe=self.is_paired, fix_unmap=True)
+        self.smp_name = fx_name(
+            self.fq1[0], fix_pe=self.is_paired, fix_rep=True, fix_unmap=True
+        )
+        self.smp_name_list = fx_name(
+            self.fq1, fix_pe=self.is_paired, fix_unmap=True
+        )
         if self.smp_name == self.smp_name_list[0]:
-            self.smp_name_list[0] += '_rep1'
-        self.rep_list = [os.path.join(self.out_dir, i) for i in self.smp_name_list]
-
+            self.smp_name_list[0] += "_rep1"
+        self.rep_list = [
+            os.path.join(self.out_dir, i) for i in self.smp_name_list
+        ]
 
     def init_index(self):
         index_list = check_index_args(**self.__dict__)
         if len(index_list) == 0:
-            raise ValueError('no index found')
+            raise ValueError("no index found")
         # update: genome_size_file
         if isinstance(self.extra_index, str):
-            self.genome_size_file = AlignIndex(self.extra_index).index_size(out_file=True)
+            self.genome_size_file = AlignIndex(self.extra_index).index_size(
+                out_file=True
+            )
         elif isinstance(self.genome, str):
             self.genome_size_file = Genome(self.genome).fai
         else:
-            raise ValueError('--genome or --extra-index; required')
+            raise ValueError("--genome or --extra-index; required")
         gs = 0
         with open(self.genome_size_file) as r:
             for line in r:
-                gs += int(line.strip().split('\t')[1])
+                gs += int(line.strip().split("\t")[1])
         self.genome_size = gs
-
 
     def init_files(self):
         self.project_name = self.smp_name
         self.project_dir = os.path.join(self.out_dir, self.smp_name)
         atac_dirs = get_atac_dirs(self.out_dir, self.smp_name)
-        atac_files = get_atac_files(self.out_dir, self.smp_name, self.fq1, self.fq2)
+        atac_files = get_atac_files(
+            self.out_dir, self.smp_name, self.fq1, self.fq2
+        )
         self = update_obj(self, atac_dirs, force=True)
         self = update_obj(self, atac_files, force=True)
         # map(check_dir, atac_dirs.values())
@@ -185,7 +202,7 @@ def main():
     CnrRn(**args).run()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
 
 #

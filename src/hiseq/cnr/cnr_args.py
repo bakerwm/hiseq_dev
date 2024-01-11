@@ -21,75 +21,148 @@ def get_args_cnr_rx():
 
 
 def get_args_fast(parser):
-    parser.add_argument('--fast', dest='fast_mode', action='store_true',
-        help='run in fast mode, for a quick look of the data')
+    parser.add_argument(
+        "--fast",
+        dest="fast_mode",
+        action="store_true",
+        help="run in fast mode, for a quick look of the data",
+    )
     return parser
 
 
 def get_args_io3():
-    example = '\n'.join([
-        'Examples:',
-        '1. support fastq input',
-        '$ python cnr_rx.py --fq1 f1.fq.gz --fq2 f2.fq.gz -o results -g dm6',
-        '2. for specific index',
-        '$ python cnr_rx.py --fq1 f1.fq.gz --fq2 f2.fq.gz -o results -x bowtie2_index/te',
-    ])
+    example = "\n".join(
+        [
+            "Examples:",
+            "1. support fastq input",
+            "$ python cnr_rx.py --fq1 f1.fq.gz --fq2 f2.fq.gz -o results -g dm6",
+            "2. for specific index",
+            "$ python cnr_rx.py --fq1 f1.fq.gz --fq2 f2.fq.gz -o results -x bowtie2_index/te",
+        ]
+    )
     parser = argparse.ArgumentParser(
-        prog='cnr_rx',
-        description='cnr: for single group: (ip vs input)',
+        prog="cnr_rx",
+        description="cnr: for single group: (ip vs input)",
         epilog=example,
-        formatter_class=argparse.RawTextHelpFormatter)
-    parser.add_argument('-q1', '--ip-fq1', nargs='+', dest='ip_fq1', default=None, 
-        required=True, help='first read of IP fastq file, or se')
-    parser.add_argument('-q2', '--ip-fq2', nargs='+', dest='ip_fq2', default=None,
-        help='second read of IP fastq file, or None')
-    parser.add_argument('-Q1', '--input-fq1', nargs='+', dest='input_fq1', 
+        formatter_class=argparse.RawTextHelpFormatter,
+    )
+    parser.add_argument(
+        "-q1",
+        "--ip-fq1",
+        nargs="+",
+        dest="ip_fq1",
         default=None,
-        help='first read of Input fastq file, or SE')
-    parser.add_argument('-Q2', '--input-fq2', nargs='+', dest='input_fq2',
+        required=True,
+        help="first read of IP fastq file, or se",
+    )
+    parser.add_argument(
+        "-q2",
+        "--ip-fq2",
+        nargs="+",
+        dest="ip_fq2",
         default=None,
-        help='second read of IP fastq file, or None')
-    parser.add_argument('--ip-name', dest='ip_name', default=None,
-        help='keyword of IP fastq file, auto-find read1/2')
-    parser.add_argument('--input-name', dest='input_name', default=None,
-        help='keyword of Input fastq file, auto-find read1/2')
+        help="second read of IP fastq file, or None",
+    )
+    parser.add_argument(
+        "-Q1",
+        "--input-fq1",
+        nargs="+",
+        dest="input_fq1",
+        default=None,
+        help="first read of Input fastq file, or SE",
+    )
+    parser.add_argument(
+        "-Q2",
+        "--input-fq2",
+        nargs="+",
+        dest="input_fq2",
+        default=None,
+        help="second read of IP fastq file, or None",
+    )
+    parser.add_argument(
+        "--ip-name",
+        dest="ip_name",
+        default=None,
+        help="keyword of IP fastq file, auto-find read1/2",
+    )
+    parser.add_argument(
+        "--input-name",
+        dest="input_name",
+        default=None,
+        help="keyword of Input fastq file, auto-find read1/2",
+    )
     # parser.add_argument('-o', '--out-dir', dest='out_dir', default=None,
     #     help='Directory saving results, default: [pwd]')
-    # parser.add_argument('-n', '--smp-name', dest='smp_name', default=None, 
+    # parser.add_argument('-n', '--smp-name', dest='smp_name', default=None,
     #     help='The name of the sample')
-    # parser.add_argument('-N', '--smp-name-list', dest='smp_name_list', default=None, 
+    # parser.add_argument('-N', '--smp-name-list', dest='smp_name_list', default=None,
     #     help='The list of names for fastq files')
     return parser
 
 
 def get_args_io4():
-    example = '\n'.join([
-        'Examples:',
-        '1. support fastq input',
-        '$ python cnr.py -b -d cnr.json -r fq_dir',
-        '2. for specific index',
-        '$ python cnr.py -d cnr.json -o results -g dm6',
-    ])
+    example = "\n".join(
+        [
+            "Examples:",
+            "1. support fastq input",
+            "$ python cnr.py -b -d cnr.json -r fq_dir",
+            "2. for specific index",
+            "$ python cnr.py -d cnr.json -o results -g dm6",
+        ]
+    )
     parser = argparse.ArgumentParser(
-        prog='cnr',
-        description='cnr: for multiple groups (ip vs input)',
+        prog="cnr",
+        description="cnr: for multiple groups (ip vs input)",
         epilog=example,
-        formatter_class=argparse.RawTextHelpFormatter)
-    parser.add_argument('-b', '--build-design', dest='build_design',
-        action='store_true',
-        help='generate design.yaml, with --fq-dir, or fq1/fq2')
-    parser.add_argument('-d', '--design', required=True,
-        help='The file saving fastq files config; generated by cnr_rd.py')
-    parser.add_argument('-r', '--fq-dir', dest='fq_dir',
-        help='Path to the directory, contains fastq files, eg: _rep1_1.fq.gz')
-    parser.add_argument('-1', '--fq1', nargs='+', required=False,
-        help='Fastq file, read1 of PE')
-    parser.add_argument('-2', '--fq2', nargs='+', required=False,
-        help='Fastq file, read2 of PE')
-    parser.add_argument('--ip', nargs='+', dest='ip', default=None,
-        help='keyword of IP fastq file, auto-find read1/2')
-    parser.add_argument('--input', nargs='+', dest='input', default=None,
-        help='keyword of Input fastq file, auto-find read1/2')    
+        formatter_class=argparse.RawTextHelpFormatter,
+    )
+    parser.add_argument(
+        "-b",
+        "--build-design",
+        dest="build_design",
+        action="store_true",
+        help="generate design.yaml, with --fq-dir, or fq1/fq2",
+    )
+    parser.add_argument(
+        "-d",
+        "--design",
+        required=True,
+        help="The file saving fastq files config; generated by cnr_rd.py",
+    )
+    parser.add_argument(
+        "-r",
+        "--fq-dir",
+        dest="fq_dir",
+        help="Path to the directory, contains fastq files, eg: _rep1_1.fq.gz",
+    )
+    parser.add_argument(
+        "-1",
+        "--fq1",
+        nargs="+",
+        required=False,
+        help="Fastq file, read1 of PE",
+    )
+    parser.add_argument(
+        "-2",
+        "--fq2",
+        nargs="+",
+        required=False,
+        help="Fastq file, read2 of PE",
+    )
+    parser.add_argument(
+        "--ip",
+        nargs="+",
+        dest="ip",
+        default=None,
+        help="keyword of IP fastq file, auto-find read1/2",
+    )
+    parser.add_argument(
+        "--input",
+        nargs="+",
+        dest="input",
+        default=None,
+        help="keyword of Input fastq file, auto-find read1/2",
+    )
     # parser.add_argument('-o', '--out-dir', dest='out_dir', default=None,
     #     help='Directory saving results, default: [pwd]')
     return parser

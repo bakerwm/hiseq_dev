@@ -19,6 +19,7 @@ optional
 
 from hiseq.utils.utils import update_obj
 from hiseq.trim.trim_rn import TrimRn, get_args
+
 # from hiseq.trim.trim_rp import TrimRp
 from hiseq.report.hiseq_report import HiSeqRpt
 
@@ -27,7 +28,6 @@ class Trim(object):
     # a copy of TrimRn
     def __init__(self, **kwargs):
         self = update_obj(self, kwargs, force=True)
-
 
     def run(self):
         rn = TrimRn(**self.__dict__)
@@ -41,7 +41,7 @@ def main():
     Trim(**args).run()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
 
 #

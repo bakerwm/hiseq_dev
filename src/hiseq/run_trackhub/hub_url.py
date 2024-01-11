@@ -23,13 +23,12 @@ from bs4 import BeautifulSoup
 from hiseq.utils.utils import log, update_obj, run_shell_cmd
 
 
-
 ## functions for Track Hub ##
 class HubUrl(object):
     """
     Convert hub.txt url to trackhub_url:
 
-    Example:    
+    Example:
     hub_url:
         - http://ip/hub.txt
     trackhub_url:
@@ -62,48 +61,50 @@ class HubUrl(object):
     >>> print(a)
 
     """
+
     def __init__(self, **kwargs):
         self = update_obj(self, kwargs, force=True)
         self.init_args()
 
-
     def init_args(self):
-        self.hub_url = getattr(self, 'hub_url', None)
-        self.genome = getattr(self, 'genome', None) # specify the genome
-        self.mirror = getattr(self, 'mirror', 'usa')
-        self.position = getattr(self, 'position', None)
-        self.validate_url = getattr(self, 'validate_url', False)
+        self.hub_url = getattr(self, "hub_url", None)
+        self.genome = getattr(self, "genome", None)  # specify the genome
+        self.mirror = getattr(self, "mirror", "usa")
+        self.position = getattr(self, "position", None)
+        self.validate_url = getattr(self, "validate_url", False)
 
         if not isinstance(self.hub_url, str):
-            raise ValueError('hub_url failed, str expected, got {}'.format(
-                type(self.hub_url).__name__))
+            raise ValueError(
+                "hub_url failed, str expected, got {}".format(
+                    type(self.hub_url).__name__
+                )
+            )
 
         if not self.is_url(self.hub_url):
-            raise ValueError('hub_url failed, not a URL: {}'.format(
-                self.hub_url))
+            raise ValueError(
+                "hub_url failed, not a URL: {}".format(self.hub_url)
+            )
 
         if self.validate_url:
-            if self.validate_hub(): # return code: 0=ok
-                raise ValueError('hub_url failed, hubCheck failed: {}'.format(
-                    self.hub_url))
-
+            if self.validate_hub():  # return code: 0=ok
+                raise ValueError(
+                    "hub_url failed, hubCheck failed: {}".format(self.hub_url)
+                )
 
     def validate_hub(self):
         if self.is_url(self.hub_url):
-            cmd = ' '.join([
-                which('hubCheck'),
-                '-noTracks',
-                self.hub_url
-                ])
+            cmd = " ".join([which("hubCheck"), "-noTracks", self.hub_url])
 
             # run
             try:
                 return run_shell_cmd(cmd)[0]
             except:
-                log.error('hub_url failed, not a valid hub_url: {}'.format(
-                    self.hub_url))
-                return 1 # fail
-
+                log.error(
+                    "hub_url failed, not a valid hub_url: {}".format(
+                        self.hub_url
+                    )
+                )
+                return 1  # fail
 
     def is_url(self, s):
         """
@@ -130,16 +131,16 @@ class HubUrl(object):
         # autofix: add 'http://' to url
         # www.abc.com
         # 127.0.0.1
-        p1 = re.compile('(^www)|(^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})',
-            flags=re.IGNORECASE)
+        p1 = re.compile(
+            "(^www)|(^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})", flags=re.IGNORECASE
+        )
         if p1.search(s):
-            s = 'http://' + s
+            s = "http://" + s
 
         # search url
-        p2 = re.compile('^((https?)|^ftp)://', flags=re.IGNORECASE)
+        p2 = re.compile("^((https?)|^ftp)://", flags=re.IGNORECASE)
 
         return p2.search(s)
-
 
     def read_url(self, s):
         """
@@ -152,18 +153,21 @@ class HubUrl(object):
         """
         d = {}
         try:
-#             log.info('Parsing url: {}'.format(s))
+            #             log.info('Parsing url: {}'.format(s))
             html = urlopen(s).read()
-            text = BeautifulSoup(html, features='html.parser')
-            x = re.split('\s', text.text)
+            text = BeautifulSoup(html, features="html.parser")
+            x = re.split("\s", text.text)
             xit = iter(x)
             d = dict(zip(xit, xit))
         except:
-            log.error('reading url failed, check your internet connection:\
-                {}'.format(s))
+            log.error(
+                "reading url failed, check your internet connection:\
+                {}".format(
+                    s
+                )
+            )
 
         return d
-
 
     def is_hub_url(self, s):
         """
@@ -171,9 +175,12 @@ class HubUrl(object):
         Parsing 'hub', 'genomesFile' in the file
         """
         args_hub = self.read_url(s)
-        return all([i in args_hub for i in
-            ['hub', 'shortLabel', 'longLabel', 'genomesFile']])
-
+        return all(
+            [
+                i in args_hub
+                for i in ["hub", "shortLabel", "longLabel", "genomesFile"]
+            ]
+        )
 
     def is_genome_url(self, s):
         """
@@ -181,8 +188,7 @@ class HubUrl(object):
         Parsing 'genome', 'trackDb' attributes
         """
         args_hub = self.read_url(s)
-        return all([i in args_hub for i in ['genome', 'trackDb']])
-
+        return all([i in args_hub for i in ["genome", "trackDb"]])
 
     def get_genome(self):
         """
@@ -195,22 +201,23 @@ class HubUrl(object):
         if isinstance(self.genome, str):
             genome = self.genome
         else:
-#             log.info('Parsing the [genome] from URL')
+            #             log.info('Parsing the [genome] from URL')
             # Parsing the hub_url webpage (plain text)
             args_hub = self.read_url(self.hub_url)
             # parsing the genome (hg19, hg38, dm6, ...)
             # construct the genome_url
-            genome_fname = args_hub.get('genomesFile', 'genomes.txt')
-            genome_url = os.path.join(os.path.dirname(self.hub_url),
-                genome_fname)
+            genome_fname = args_hub.get("genomesFile", "genomes.txt")
+            genome_url = os.path.join(
+                os.path.dirname(self.hub_url), genome_fname
+            )
             args_genome = self.read_url(genome_url)
-            genome = args_genome.get('genome', None)
+            genome = args_genome.get("genome", None)
             if not isinstance(genome, str):
-                raise ValueError('genome failed, illegal file: {}'.format(
-                    genome_url))
-#             log.info('Got [genome={}]'.format(genome))
+                raise ValueError(
+                    "genome failed, illegal file: {}".format(genome_url)
+                )
+        #             log.info('Got [genome={}]'.format(genome))
         return genome
-
 
     def init_mirror(self, s):
         """
@@ -225,23 +232,26 @@ class HubUrl(object):
         """
         # common mirrors
         mirrors = {
-            'usa': 'http://genome.ucsc.edu',
-            'asia': 'http://genome-asia.ucsc.edu',
-            'euro': 'http://genome-euro.ucsc.edu'}
+            "usa": "http://genome.ucsc.edu",
+            "asia": "http://genome-asia.ucsc.edu",
+            "euro": "http://genome-euro.ucsc.edu",
+        }
 
         # determine the mirror
         if self.is_url(s):
             mirror = s
         elif s in mirrors:
-            mirror = mirrors.get(s, mirrors['usa'])
+            mirror = mirrors.get(s, mirrors["usa"])
         else:
-            mirror = mirrors['usa']
-            log.warning((
-                'mirror, illegal value, http://, or'
-                '[usa|asia|euro] expect, got {}, set mirror=usa').format(s))
+            mirror = mirrors["usa"]
+            log.warning(
+                (
+                    "mirror, illegal value, http://, or"
+                    "[usa|asia|euro] expect, got {}, set mirror=usa"
+                ).format(s)
+            )
 
         return mirror
-
 
     def format_position(self, position=None):
         """
@@ -260,21 +270,19 @@ class HubUrl(object):
         if not isinstance(position, str):
             posotion = self.position
 
-        fmt_pos = '' # formated position
+        fmt_pos = ""  # formated position
 
         if isinstance(position, str):
-            position = re.sub('[^\w:-]', '', position) # sanitize chr
-            p = re.compile('^(\w+):([\d,]+)-([\d,]+)$') # chr1:200-400
+            position = re.sub("[^\w:-]", "", position)  # sanitize chr
+            p = re.compile("^(\w+):([\d,]+)-([\d,]+)$")  # chr1:200-400
             m = p.search(position)
 
             # output format: chr%3A{}-{}
             if m:
-                fmt_pos = '&position={chr}%3A{start}-{end}'.format(
-                    chr=m.group(1),
-                    start=m.group(2),
-                    end=m.group(3))
+                fmt_pos = "&position={chr}%3A{start}-{end}".format(
+                    chr=m.group(1), start=m.group(2), end=m.group(3)
+                )
         return fmt_pos
-
 
     def trackhub_url(self, position=None):
         """
@@ -316,6 +324,8 @@ class HubUrl(object):
         fmt_pos = self.format_position(position)
 
         return (
-            '{mirror}/cgi-bin/hgTracks?db={genome}'
-            '{position}&hubUrl={hub_url}').format(
-            mirror=mirror, genome=genome, position=fmt_pos, hub_url=hub_url)
+            "{mirror}/cgi-bin/hgTracks?db={genome}"
+            "{position}&hubUrl={hub_url}"
+        ).format(
+            mirror=mirror, genome=genome, position=fmt_pos, hub_url=hub_url
+        )

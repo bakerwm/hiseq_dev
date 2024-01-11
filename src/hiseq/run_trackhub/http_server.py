@@ -18,10 +18,10 @@ class HttpServer(object):
     Transform the path of local files to urls (http)
 
     Attributes:
-        s (str): Path to a file/directory 
-        http_root_dir (str): Path to the http_root, 
+        s (str): Path to a file/directory
+        http_root_dir (str): Path to the http_root,
             it is /var/www/html for apache2
-        http_root_url (str): Url to the root of the website, 
+        http_root_url (str): Url to the root of the website,
             default is the IP address
 
     Example:
@@ -41,9 +41,9 @@ class HttpServer(object):
 
     Suppose:
     - Apache2 is properly installed, and working well
-    
+
     1. Guess the ip address
-    2. Get the http_root_dir from argument 
+    2. Get the http_root_dir from argument
     3. Check if the query_path is in the sub_folder of http_root_dir
     4. Transform the query_path to http url
 
@@ -73,9 +73,9 @@ class HttpServer(object):
     # Fetch the IP of the server
     $ hostname -I
     1.2.3.4 # (fake ip, here)
-    
+
     # in case multiple hosts, choose first one
-    $ hostname -I 
+    $ hostname -I
     1.2.3.4  5.6.7.8
     you can find the http_root_ip is '1.2.3.4'
 
@@ -96,15 +96,21 @@ class HttpServer(object):
     The `http_root_url` for the virtualHost was: `hostname/publi`, and the
     correspond `http_root_path` was: `/data/public`
     """
-    def __init__(self, s='', http_root_dir='', http_root_alias='', 
-        is_https=False, **kwargs):
+
+    def __init__(
+        self,
+        s="",
+        http_root_dir="",
+        http_root_alias="",
+        is_https=False,
+        **kwargs,
+    ):
         self = update_obj(self, kwargs, force=True)
         self.s = s
         self.http_root_dir = http_root_dir
         self.http_root_alias = http_root_alias
         self.is_https = is_https
         self.init_files()
-
 
     def init_files(self):
         """
@@ -127,62 +133,68 @@ class HttpServer(object):
             {http}://{ip}{http_root_alias}
         """
         # absolute path
-        self.s = file_abspath(self.s).rstrip('/')
-        self.http_root_dir = file_abspath(self.http_root_dir).rstrip('/')
+        self.s = file_abspath(self.s).rstrip("/")
+        self.http_root_dir = file_abspath(self.http_root_dir).rstrip("/")
 
         # update http_root_{alias,url}
         if self.is_url(self.http_root_url):
-            self.http_root_url = self.http_root_url.rstrip('/')
-            url = re.sub('^((https?)|^(ftp))://', '', self.http_root_url)
-            url_ip, url_dir = url.split('/', 1) #
-            self.http_root_alias = '/' + url_dir
+            self.http_root_url = self.http_root_url.rstrip("/")
+            url = re.sub("^((https?)|^(ftp))://", "", self.http_root_url)
+            url_ip, url_dir = url.split("/", 1)  #
+            self.http_root_alias = "/" + url_dir
         elif len(self.http_root_alias) > 0:
-            self.http_root_alias = self.http_root_alias.rstrip('/')
+            self.http_root_alias = self.http_root_alias.rstrip("/")
             url_ip = self.get_ip()
-            url_http = 'https' if self.is_https else 'http'
-            self.http_root_url = '{http}://{ip}{alias}'.format(
-                http=url_http,
-                ip=url_ip,
-                alias=self.http_root_alias)
+            url_http = "https" if self.is_https else "http"
+            self.http_root_url = "{http}://{ip}{alias}".format(
+                http=url_http, ip=url_ip, alias=self.http_root_alias
+            )
         else:
-            log.error('check http_root_alias, http_root_url')
+            log.error("check http_root_alias, http_root_url")
             raise ValueError(self.http_root_alias, self.http_root_url)
 
         # log message
-        self.msg = '\n'.join([
-            'Parameters',
-            '{:>16s}: {}, {}'.format(
-                's',
-                isinstance(self.s, str),
-                self.s),
-            '{:>16s}: {}, {}'.format(
-                'http_root_dir',
-                isinstance(self.http_root_dir, str),
-                self.http_root_dir),
-            '{:>16s}: {}, {}'.format(
-                'http_root_alias',
-                isinstance(self.http_root_alias, str),
-                self.http_root_alias),
-            '{:>16s}: {}, {}'.format(
-                'http_root_url',
-                isinstance(self.http_root_url, str),
-                self.http_root_url)
-        ])
+        self.msg = "\n".join(
+            [
+                "Parameters",
+                "{:>16s}: {}, {}".format("s", isinstance(self.s, str), self.s),
+                "{:>16s}: {}, {}".format(
+                    "http_root_dir",
+                    isinstance(self.http_root_dir, str),
+                    self.http_root_dir,
+                ),
+                "{:>16s}: {}, {}".format(
+                    "http_root_alias",
+                    isinstance(self.http_root_alias, str),
+                    self.http_root_alias,
+                ),
+                "{:>16s}: {}, {}".format(
+                    "http_root_url",
+                    isinstance(self.http_root_url, str),
+                    self.http_root_url,
+                ),
+            ]
+        )
 
         # check http_root_dir and s
         # s contains http_root_dir
         if not self.s.startswith(self.http_root_dir):
-            log.error('s and http_root_dir not match')
+            log.error("s and http_root_dir not match")
             raise ValueError(self.msg)
 
         # argument type
-        if not all([isinstance(i, str) for i in [
-            self.s,
-            self.http_root_dir,
-            self.http_root_url,
-            self.http_root_alias]]):
+        if not all(
+            [
+                isinstance(i, str)
+                for i in [
+                    self.s,
+                    self.http_root_dir,
+                    self.http_root_url,
+                    self.http_root_alias,
+                ]
+            ]
+        ):
             raise ValueError(self.msg)
-
 
     def get_ip(self):
         """
@@ -190,35 +202,37 @@ class HttpServer(object):
             - Ubuntu
             $ hostname -I
             1.2.3.4
-            
+
             $ hostname -I
-            1.2.3.4   5.6.7.8 
+            1.2.3.4   5.6.7.8
             # in case multiple hosts
         """
-#         return run_shell_cmd('hostname -I')[1].strip()
-        ip = run_shell_cmd('hostname -I')[1].strip()
-        ip_list = ip.split(' ')
+        #         return run_shell_cmd('hostname -I')[1].strip()
+        ip = run_shell_cmd("hostname -I")[1].strip()
+        ip_list = ip.split(" ")
         if len(ip_list) > 1:
-            ip = ip_list[0] # first
-            log.warning('Multiple ip addresses found: {}, choose: [{}]'.format(
-                ip_list, ip))
+            ip = ip_list[0]  # first
+            log.warning(
+                "Multiple ip addresses found: {}, choose: [{}]".format(
+                    ip_list, ip
+                )
+            )
         # validate
         if self.is_ipv4(ip):
             return ip
         else:
-            raise ValueError('not valid ip address found: {}'.format(ip))
-        
-    
+            raise ValueError("not valid ip address found: {}".format(ip))
+
     def is_ipv4(self, s):
         # validate ipv4
         def is_valid(i):
-            try: 
+            try:
                 return str(int(i)) == i and 0 <= int(i) <= 255
-            except: 
+            except:
                 return False
+
         # check
         return s.count(".") == 3 and all(is_valid(i) for i in s.split("."))
-
 
     def is_url(self, s):
         """
@@ -236,14 +250,14 @@ class HttpServer(object):
         # autofix: add 'http://' to url
         # www.abc.com
         # 127.0.0.1
-        p1 = re.compile('(^www)|(^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})',
-            flags=re.IGNORECASE)
+        p1 = re.compile(
+            "(^www)|(^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})", flags=re.IGNORECASE
+        )
         if p1.search(s):
-            s = 'http://' + s
+            s = "http://" + s
         # search url
-        p2 = re.compile('^((https?)|^ftp)://', flags=re.IGNORECASE)
+        p2 = re.compile("^((https?)|^ftp)://", flags=re.IGNORECASE)
         return p2.search(s)
-
 
     def to_url(self, s=None):
         """
@@ -256,8 +270,8 @@ class HttpServer(object):
             s = self.s
 
         if s.startswith(self.http_root_dir):
-            s_alias = self.s[len(self.http_root_dir):]
+            s_alias = self.s[len(self.http_root_dir) :]
             return self.http_root_url + s_alias
         else:
-            log.error('s and http_root_dir not in the same dir')
+            log.error("s and http_root_dir not in the same dir")
             raise ValueError(self.msg)

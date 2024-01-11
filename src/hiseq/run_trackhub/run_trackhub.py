@@ -23,8 +23,7 @@ import subprocess
 from shutil import which
 from urllib.request import urlopen
 from bs4 import BeautifulSoup
-from hiseq.utils.file import file_exists, list_dir, \
-    check_dir, remove_dir
+from hiseq.utils.file import file_exists, list_dir, check_dir, remove_dir
 from hiseq.utils.utils import log, update_obj, Config
 from hiseq.run_trackhub.hub_url import HubUrl
 from hiseq.run_trackhub.http_server import HttpServer
@@ -51,7 +50,7 @@ from hiseq.run_trackhub.utils import trackhub_config_template
 # 3. Create, Init compositeTrack, based on subgroups
 
 
-class TrackHub():
+class TrackHub:
     """
     Generate multiple CompositeTracks
     Organize files in directory, as CompositeTrack(s)
@@ -154,10 +153,10 @@ class TrackHub():
     >>> th.render()
     >>> th.upload()
     """
+
     def __init__(self, **kwargs):
         self = update_obj(self, kwargs, force=True)
         self.init_args()
-
 
     def init_args(self):
         if self.demo or self.config is None:
@@ -166,22 +165,26 @@ class TrackHub():
         else:
             args_local = TrackHubConfig(**self.__dict__)
             self = update_obj(self, args_local.__dict__, force=True)
-            self.init_hub() # main port, hub, trackdb, ...
+            self.init_hub()  # main port, hub, trackdb, ...
 
             # path to hub.txt
             self.remote_hub_dir = os.path.join(self.remote_dir, self.hub_name)
             self.hub_txt = os.path.join(self.remote_hub_dir, self.hub.filename)
 
-
     def init_hub(self):
-        self.hub, self.genome_file, genome, self.trackdb = trackhub.default_hub(
+        (
+            self.hub,
+            self.genome_file,
+            genome,
+            self.trackdb,
+        ) = trackhub.default_hub(
             hub_name=self.hub_name,
             short_label=self.short_label,
             long_label=self.long_label,
             genome=self.genome,
-            email=self.email)
-            # descriptionUrl=self.descriptionUrl)
-
+            email=self.email,
+        )
+        # descriptionUrl=self.descriptionUrl)
 
     def init_composite(self, subgroups_config):
         """
@@ -219,11 +222,11 @@ class TrackHub():
         trackhub -> compositeTrack -> view -> tracks
         return [composite, signal_view, region_view]
         """
-        composite_name = subgroups_config.get('name', 'composite')
-        composite_subgroup = subgroups_config.get('subgroups', None)
-        bw_files = subgroups_config.get('bw_files', [])
-        bb_files = subgroups_config.get('bb_files', [])
-        bigNarrowPeak_files = subgroups_config.get('bigNarrowPeak_files', [])
+        composite_name = subgroups_config.get("name", "composite")
+        composite_subgroup = subgroups_config.get("subgroups", None)
+        bw_files = subgroups_config.get("bw_files", [])
+        bb_files = subgroups_config.get("bb_files", [])
+        bigNarrowPeak_files = subgroups_config.get("bigNarrowPeak_files", [])
         # For subgroups:
         # required arguments:
         # 1. subgroups, YAML file, saving subgroups structure
@@ -237,35 +240,44 @@ class TrackHub():
         if isinstance(subgroups_dict, dict):
             # prepare trackhub.SubGroupDefinition()
             # the order: dimX, dimY, dimA, ...
-            subgroups_def_list = [trackhub.SubGroupDefinition(
-                name=i.get('name', None),
-                label=i.get('label', None),
-                mapping=i.get('mapping', None)
-                ) for i in list(subgroups_dict.values())]
+            subgroups_def_list = [
+                trackhub.SubGroupDefinition(
+                    name=i.get("name", None),
+                    label=i.get("label", None),
+                    mapping=i.get("mapping", None),
+                )
+                for i in list(subgroups_dict.values())
+            ]
 
             # prepare: dimensions
             # format: 'dimX=stage dimY=gene', or dict
-            dimensions = ' '.join([
-                '{}={}'.format(k, v.get('name', None)) for k, v in
-                    subgroups_dict.items()])
+            dimensions = " ".join(
+                [
+                    "{}={}".format(k, v.get("name", None))
+                    for k, v in subgroups_dict.items()
+                ]
+            )
 
             # prepare: sortOder
             # format: stage=+, gene=+
-            dim_list = [i.get('name', None) for i in
-                list(subgroups_dict.values()) if i.get('name', None)]
-            sortOrder = ' '.join(['{}=+'.format(i) for i in dim_list])
+            dim_list = [
+                i.get("name", None)
+                for i in list(subgroups_dict.values())
+                if i.get("name", None)
+            ]
+            sortOrder = " ".join(["{}=+".format(i) for i in dim_list])
 
             # prepare: filterComposite
             # format: dimA, ...
-            filterComposite = None # fixed
-#             if len(dim_list) > 2:
-#                 filterComposite = ' '.join(list(subgroups_dict.keys())[2:])
-#             else:
-#                 filterComposite = None
+            filterComposite = None  # fixed
+        #             if len(dim_list) > 2:
+        #                 filterComposite = ' '.join(list(subgroups_dict.keys())[2:])
+        #             else:
+        #                 filterComposite = None
         else:
             subgroups_def_list = []
             dimensions = None
-            sortOrder = None,
+            sortOrder = (None,)
             filterComposite = None
 
         # init composite
@@ -276,8 +288,8 @@ class TrackHub():
             dimensions=dimensions,
             sortOrder=sortOrder,
             filterComposite=filterComposite,
-            tracktype='bigWig', # only for bigWig tracks
-            visibility='full'
+            tracktype="bigWig",  # only for bigWig tracks
+            visibility="full",
         )
 
         # add subgroups
@@ -285,11 +297,12 @@ class TrackHub():
 
         # add signal view (bigWig, bigBed, ...)
         signal_view = trackhub.ViewTrack(
-            name=composite_name+'_signal',
-            view='signal',
-            visibility='full',
-            tracktype='bigWig',
-            short_label='Signal')
+            name=composite_name + "_signal",
+            view="signal",
+            visibility="full",
+            tracktype="bigWig",
+            short_label="Signal",
+        )
         if len(bw_files) > 0:
             composite.add_view(signal_view)
         else:
@@ -298,30 +311,31 @@ class TrackHub():
         # add region view (bigBed)
         if len(bb_files) > 0:
             region_view = trackhub.ViewTrack(
-                name=composite_name+'_region',
-                view='regions',
-                visibility='dense',
-                tracktype='bigBed',
-                short_label='Region')
+                name=composite_name + "_region",
+                view="regions",
+                visibility="dense",
+                tracktype="bigBed",
+                short_label="Region",
+            )
             composite.add_view(region_view)
         # add region view (bigNarrowPeak)
         elif len(bigNarrowPeak_files) > 0:
             region_view = trackhub.ViewTrack(
-                name=composite_name+'_region',
-                view='regions',
-                visibility='dense',
-                tracktype='bigNarrowPeak',
-                short_label='Region')
+                name=composite_name + "_region",
+                view="regions",
+                visibility="dense",
+                tracktype="bigNarrowPeak",
+                short_label="Region",
+            )
             composite.add_view(region_view)
         else:
-            region_view = None            
+            region_view = None
         # output
         return (composite, subgroups_dict, signal_view, region_view)
 
-
     def sanitize(self, s, remove_list=None):
         """
-        Sanitize a string, for shortLabel, letters, numbers 
+        Sanitize a string, for shortLabel, letters, numbers
         allowed only [A-Za-z0-9]
 
         Convert spaces to unserscore, remove other characters
@@ -335,17 +349,16 @@ class TrackHub():
             if list, remove the items from string; if None, skipped
         """
         # remove non-characters:
-        s1 = re.sub('[^A-Za-z0-9_ ]', '', s)
+        s1 = re.sub("[^A-Za-z0-9_ ]", "", s)
         # replace spaces to underscore
-        s1 = re.sub('\s+', '_', s1)
+        s1 = re.sub("\s+", "_", s1)
         # remove specific strings
         if isinstance(remove_list, list):
             for i in remove_list:
                 if not isinstance(i, str):
                     continue
-                s1 = re.sub(i, '', s1, flags=re.IGNORECASE)
+                s1 = re.sub(i, "", s1, flags=re.IGNORECASE)
         return s1
-
 
     def add_CompositeTrack(self):
         """
@@ -357,37 +370,43 @@ class TrackHub():
         """
         if len(self.subgroups_list) > 0:
             for subgroups_config in list(self.subgroups_list.values()):
-                composite, subgroups_dict, signal_view, \
-                    region_view = self.init_composite(subgroups_config)
+                (
+                    composite,
+                    subgroups_dict,
+                    signal_view,
+                    region_view,
+                ) = self.init_composite(subgroups_config)
                 # add composite to trackdb
                 self.trackdb.add_tracks(composite)
                 # add bigWig files
-                for bw in subgroups_config.get('bw_files', []):
+                for bw in subgroups_config.get("bw_files", []):
                     # print('!AAAA-2', self.colorPal)
-                    tk = TrackFile(bw,
+                    tk = TrackFile(
+                        bw,
                         subgroups=subgroups_dict,
-                        colorDim=self.colorDim, # dimX, dimY, dimA, ...
+                        colorDim=self.colorDim,  # dimX, dimY, dimA, ...
                         colorPal=self.colorPal,
-                        label_rm_list=self.label_rm_list).track
+                        label_rm_list=self.label_rm_list,
+                    ).track
                     signal_view.add_tracks(tk)
                 # add bigBed files
-                for bb in subgroups_config.get('bb_files', []):
-                    tk = TrackFile(bb,
+                for bb in subgroups_config.get("bb_files", []):
+                    tk = TrackFile(
+                        bb,
                         subgroups=subgroups_dict,
-                        colorDim=self.colorDim, # dimX, dimY, dimA, ...
-                        label_rm_list=self.label_rm_list).track
+                        colorDim=self.colorDim,  # dimX, dimY, dimA, ...
+                        label_rm_list=self.label_rm_list,
+                    ).track
                     region_view.add_tracks(tk)
         else:
-            raise ValueError('Track() failed')
-
+            raise ValueError("Track() failed")
 
     def _tmp(self, is_dir=False):
         if is_dir:
-            tmp = tempfile.TemporaryDirectory(prefix='trackhub')
+            tmp = tempfile.TemporaryDirectory(prefix="trackhub")
         else:
-            tmp = tempfile.NamedTemporaryFile(prefix='trackhub', delete=False)
+            tmp = tempfile.NamedTemporaryFile(prefix="trackhub", delete=False)
         return tmp.name
-
 
     def render(self):
         """
@@ -399,11 +418,10 @@ class TrackHub():
         self.add_CompositeTrack()
         # create symlinks
         tmp_dir = self._tmp(is_dir=True)
-        log.info('Render track hub to: {}'.format(tmp_dir))
+        log.info("Render track hub to: {}".format(tmp_dir))
         trackhub.upload.stage_hub(self.hub, staging=tmp_dir)
         # hub.txt file
         return os.path.join(tmp_dir, self.hub.filename)
-
 
     def upload(self):
         if isinstance(self.remote_dir, str):
@@ -414,15 +432,18 @@ class TrackHub():
             tmp_dir = self.render()
             remove_dir(tmp_dir, ask=False)
             # upload files to remote/server
-            trackhub.upload.upload_hub(self.hub, host='localhost',
-                remote_dir=self.remote_hub_dir)
+            trackhub.upload.upload_hub(
+                self.hub, host="localhost", remote_dir=self.remote_hub_dir
+            )
             # return hub filename
             return self.hub_txt
 
         else:
-            log.error('remote_dir failed, str expected, got {}'.format(
-                type(self.remote_dir).__name__))
-
+            log.error(
+                "remote_dir failed, str expected, got {}".format(
+                    type(self.remote_dir).__name__
+                )
+            )
 
     def get_hub_url(self):
         """
@@ -443,11 +464,10 @@ class TrackHub():
         # convert hub_txt to hub_url
         self.hub_url = HttpServer(s=self.hub_txt, **self.__dict__).to_url()
         # save hub_url to hub.yaml
-        hub_yaml = self.remote_hub_dir + '/hub.yaml'
-        hub_dict = {'hub_url': self.hub_url}
+        hub_yaml = self.remote_hub_dir + "/hub.yaml"
+        hub_dict = {"hub_url": self.hub_url}
         Config().dump(hub_dict, hub_yaml)
         return self.hub_url
-
 
     def get_trackhub_url(self):
         """
@@ -467,17 +487,16 @@ class TrackHub():
         if not file_exists(self.hub_txt):
             self.upload()
         # hub_url
-        self.get_hub_url() # self.
+        self.get_hub_url()  # self.
         # trackhub_url
         self.trackhub_url = HubUrl(**self.__dict__).trackhub_url()
         # save hub_url to hub.yaml
-        hub_yaml = self.remote_hub_dir + '/hub.yaml'
-        hub_dict = {'hub_url': self.hub_url, 'trackhub_url': self.trackhub_url}
+        hub_yaml = self.remote_hub_dir + "/hub.yaml"
+        hub_dict = {"hub_url": self.hub_url, "trackhub_url": self.trackhub_url}
         Config().dump(hub_dict, hub_yaml)
         # target files
-        print('>> find hub_txt: {}'.format(hub_yaml))
+        print(">> find hub_txt: {}".format(hub_yaml))
         return self.trackhub_url
-
 
     def run(self):
         """
@@ -527,12 +546,12 @@ class TrackHubConfig(object):
         shWhite: white-KD
       name: gene
     """
+
     def __init__(self, **kwargs):
         self = update_obj(self, kwargs, force=True)
         self.init_args()
         self.init_check()
         self.init_files()
-
 
     def init_args(self):
         """
@@ -542,27 +561,27 @@ class TrackHubConfig(object):
         HubUrl args,
         """
         args_init = {
-            'config': None, # yaml, for global args
-            'data_dir': None,
-            'remote_dir': None,
-            'hub_name': None,
-            'genome': None,
-            'user': 'UCSC',
-            'email': 'abc@abc.com',
-            'dry_run': False,
-            'short_label': None,
-            'long_label': None,
-            'descriptionUrl': '',
-            'colorDim': 'dimX',
-            'colorPal': 1,
-            'label_rm_list': [],
-            'http_root_dir': None,
-            'http_root_alias': None,
-            'http_root_url': None,
-            'is_https': False,
-            'mirror': None,
-            'position': None,
-            'validate_url': False
+            "config": None,  # yaml, for global args
+            "data_dir": None,
+            "remote_dir": None,
+            "hub_name": None,
+            "genome": None,
+            "user": "UCSC",
+            "email": "abc@abc.com",
+            "dry_run": False,
+            "short_label": None,
+            "long_label": None,
+            "descriptionUrl": "",
+            "colorDim": "dimX",
+            "colorPal": 1,
+            "label_rm_list": [],
+            "http_root_dir": None,
+            "http_root_alias": None,
+            "http_root_url": None,
+            "is_https": False,
+            "mirror": None,
+            "position": None,
+            "validate_url": False,
         }
         self = update_obj(self, args_init, force=False)
         # update from config # !!!! loading args from config.yaml
@@ -575,41 +594,46 @@ class TrackHubConfig(object):
         if not isinstance(self.long_label, str):
             self.long_label = self.short_label
         if not isinstance(self.email, str):
-            self.email = 'abc@abc.com'
-
+            self.email = "abc@abc.com"
 
     def init_check(self):
         """
         Check files, path, ...
         """
-        self.msg_args = '\n'.join([
-            'Parameters',
-            '{:>16s}: {}, {}'.format(
-                'data_dir',
-                isinstance(self.data_dir, str),
-                self.data_dir),
-            '{:>16s}: {}, {}'.format(
-                'hub_name',
-                isinstance(self.hub_name, str),
-                self.hub_name),
-            '{:>16s}: {}, {}'.format(
-                'genome',
-                isinstance(self.genome, str),
-                self.genome),
-            '{:>16s}: {}, {}'.format(
-                'user',
-                isinstance(self.user, str),
-                self.user),
-             '{:>16s}: {}, {}'.format(
-                'email',
-                isinstance(self.email, str),
-                self.email)
-        ])
+        self.msg_args = "\n".join(
+            [
+                "Parameters",
+                "{:>16s}: {}, {}".format(
+                    "data_dir", isinstance(self.data_dir, str), self.data_dir
+                ),
+                "{:>16s}: {}, {}".format(
+                    "hub_name", isinstance(self.hub_name, str), self.hub_name
+                ),
+                "{:>16s}: {}, {}".format(
+                    "genome", isinstance(self.genome, str), self.genome
+                ),
+                "{:>16s}: {}, {}".format(
+                    "user", isinstance(self.user, str), self.user
+                ),
+                "{:>16s}: {}, {}".format(
+                    "email", isinstance(self.email, str), self.email
+                ),
+            ]
+        )
 
-        if not all([isinstance(i, str) for i in [self.data_dir, self.hub_name,
-            self.genome, self.user, self.email]]):
+        if not all(
+            [
+                isinstance(i, str)
+                for i in [
+                    self.data_dir,
+                    self.hub_name,
+                    self.genome,
+                    self.user,
+                    self.email,
+                ]
+            ]
+        ):
             raise ValueError(self.msg_args)
-
 
     def init_files(self):
         """
@@ -632,34 +656,43 @@ class TrackHubConfig(object):
         Support only 2-level directory structure:
         """
         # 1st-level: data_dir
-        subgrp_yaml = os.path.join(self.data_dir, 'subgroups.yaml')
-        g_lv1 = self.parse_group_files(data_dir=self.data_dir,
-            grp_name=self.hub_name)
+        subgrp_yaml = os.path.join(self.data_dir, "subgroups.yaml")
+        g_lv1 = self.parse_group_files(
+            data_dir=self.data_dir, grp_name=self.hub_name
+        )
         d_grp = {}
         # level-1: subgroups in data_dir
         if g_lv1:
             d_grp = {self.hub_name: g_lv1}
         else:
-        # 2nd-level: data_dir/subdir
-            d_lv1 = [i for i in list_dir(self.data_dir, include_dirs=True)
-                if os.path.isdir(i)]
+            # 2nd-level: data_dir/subdir
+            d_lv1 = [
+                i
+                for i in list_dir(self.data_dir, include_dirs=True)
+                if os.path.isdir(i)
+            ]
             if len(d_lv1) > 0:
                 g_lv2 = [self.parse_group_files(data_dir=d) for d in d_lv1]
-                g_lv2 = [i for i in g_lv2 if not i is None] # remove None
+                g_lv2 = [i for i in g_lv2 if not i is None]  # remove None
                 if len(g_lv2) > 0:
-                    d_grp = {i['name']:i for i in g_lv2}
+                    d_grp = {i["name"]: i for i in g_lv2}
         # check
         if len(d_grp) == 0:
-            msg = '\n'.join([
-                'bigWig files or subgroups.yaml not found.',
-                'Check files in: [{}]'.format(self.data_dir)
-            ])
+            msg = "\n".join(
+                [
+                    "bigWig files or subgroups.yaml not found.",
+                    "Check files in: [{}]".format(self.data_dir),
+                ]
+            )
             log.error(msg)
             sys.exit(1)
-            raise ValueError('bigWig files and subgroups.yaml not found: \
-                check directory {}'.format(self.data_dir))
+            raise ValueError(
+                "bigWig files and subgroups.yaml not found: \
+                check directory {}".format(
+                    self.data_dir
+                )
+            )
         self.subgroups_list = d_grp
-
 
     def parse_group_files(self, data_dir, grp_name=None):
         """
@@ -691,66 +724,94 @@ class TrackHubConfig(object):
             if os.path.isdir(data_dir):
                 if not isinstance(grp_name, str):
                     grp_name = os.path.basename(data_dir)
-                subgrp_lv1 = os.path.join(data_dir, 'subgroups.yaml')
+                subgrp_lv1 = os.path.join(data_dir, "subgroups.yaml")
                 if file_exists(subgrp_lv1):
                     # files: level=1
-                    f_lv1 = [i for i in list_dir(data_dir)
-                        if TrackFile(i).is_track_file()]
+                    f_lv1 = [
+                        i
+                        for i in list_dir(data_dir)
+                        if TrackFile(i).is_track_file()
+                    ]
                     # files: level=2
-                    d_lv1 = [i for i in list_dir(data_dir, include_dirs=True)
-                        if os.path.isdir(i)]
-                    f_lv2 = [] # empty
+                    d_lv1 = [
+                        i
+                        for i in list_dir(data_dir, include_dirs=True)
+                        if os.path.isdir(i)
+                    ]
+                    f_lv2 = []  # empty
                     if len(d_lv1) > 0:
-                        [f_lv2.extend([i for i in list_dir(d)
-                            if TrackFile(i).is_track_file()]) for d in d_lv1]
+                        [
+                            f_lv2.extend(
+                                [
+                                    i
+                                    for i in list_dir(d)
+                                    if TrackFile(i).is_track_file()
+                                ]
+                            )
+                            for d in d_lv1
+                        ]
                     f_lv1.extend(f_lv2)
                     # print('!AAAA-1', f_lv1)
                     # output
                     d_grp = {
-                        'name': grp_name,
-                        'subgroups': subgrp_lv1,
-                        'bw_files': [i for i in f_lv1 if TrackFile(i).is_bw()],
-                        'bb_files': [i for i in f_lv1 if TrackFile(i).is_bb()],
-                        'bigNarrowPeak_files': [i for i in f_lv1 if TrackFile(i).is_bigNarrowPeak()],
+                        "name": grp_name,
+                        "subgroups": subgrp_lv1,
+                        "bw_files": [i for i in f_lv1 if TrackFile(i).is_bw()],
+                        "bb_files": [i for i in f_lv1 if TrackFile(i).is_bb()],
+                        "bigNarrowPeak_files": [
+                            i for i in f_lv1 if TrackFile(i).is_bigNarrowPeak()
+                        ],
                     }
                     # print('!AAAA-2', d_grp)
                     # check
-                    if len(d_grp.get('bw_files')) == 0:
-                        log.warning('bigWig files not found: {}'.format(
-                            data_dir))
+                    if len(d_grp.get("bw_files")) == 0:
+                        log.warning(
+                            "bigWig files not found: {}".format(data_dir)
+                        )
                         d_grp = None
                 else:
-                    log.warning('required file missing: {}'.format(subgrp_lv1))
+                    log.warning("required file missing: {}".format(subgrp_lv1))
             else:
-                log.warning('not a directory: data_dir={}'.format(data_dir))
+                log.warning("not a directory: data_dir={}".format(data_dir))
         else:
-            log.warning('data_dir expect str, got {}'.format(
-                type(data_dir).__name__))
+            log.warning(
+                "data_dir expect str, got {}".format(type(data_dir).__name__)
+            )
         # output
         return d_grp
 
 
 def get_args():
     parser = argparse.ArgumentParser(
-        prog='run_trackhub',
-        description='Generate trackhub for bigWig and bigBed files',
-        epilog='Example: \n\
-               python run_trackhub.py --config config.yaml')
-    parser.add_argument('-d', '--demo', action='store_true',
-        help='Show the tutorial')
-    parser.add_argument('--dry-run', dest='dry_run', action='store_true',
-        help='Generate trackhub files, Do not copy track files to remote_dir')
-    parser.add_argument('-c', '--config', default=None,
-        help='Config file, run -d, generate the template')
+        prog="run_trackhub",
+        description="Generate trackhub for bigWig and bigBed files",
+        epilog="Example: \n\
+               python run_trackhub.py --config config.yaml",
+    )
+    parser.add_argument(
+        "-d", "--demo", action="store_true", help="Show the tutorial"
+    )
+    parser.add_argument(
+        "--dry-run",
+        dest="dry_run",
+        action="store_true",
+        help="Generate trackhub files, Do not copy track files to remote_dir",
+    )
+    parser.add_argument(
+        "-c",
+        "--config",
+        default=None,
+        help="Config file, run -d, generate the template",
+    )
     return parser
-    
-    
+
+
 def main():
     args = vars(get_args().parse_args())
     TrackHub(**args).run()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
 
 #

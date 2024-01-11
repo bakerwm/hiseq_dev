@@ -13,8 +13,12 @@ import shutil
 import argparse
 from hiseq.utils.utils import update_obj, Config, log, run_shell_cmd
 from hiseq.utils.file import (
-    check_file, check_dir, file_exists, file_abspath, symlink_file,
-    remove_file
+    check_file,
+    check_dir,
+    file_exists,
+    file_abspath,
+    symlink_file,
+    remove_file,
 )
 from hiseq.utils.seq import Fastx, check_fx_args, check_fx_paired, fx_name
 from hiseq.align.align_index import AlignIndex
@@ -77,34 +81,35 @@ def parse_star(x):
                 if len(p) < 2:
                     continue
                 n = p[-1]
-                if not re.match('^[0-9]+$', n):
+                if not re.match("^[0-9]+$", n):
                     continue
                 n = eval(n)
-                if 'Number of input reads' in line:
+                if "Number of input reads" in line:
                     total = n
-                elif 'Uniquely mapped reads number' in line:
+                elif "Uniquely mapped reads number" in line:
                     unique = n
-                elif 'Number of reads mapped to multiple loci' in line:
+                elif "Number of reads mapped to multiple loci" in line:
                     multi = n
-                elif 'Number of reads mapped to too many loci' in line:
+                elif "Number of reads mapped to too many loci" in line:
                     multi2 = n
         # if unique_only
         # multi = 0, multi2 >0
         if multi == 0 and multi2 > 0:
             multi = multi2
     else:
-        log.error('file not exists, {}'.format(x))
+        log.error("file not exists, {}".format(x))
     # msg
     if warn_chunkmbs:
-        log.warning('{}\nset --chunkmbs 128, to fix the errors'.format(
-            warn_chunkmbs))
+        log.warning(
+            "{}\nset --chunkmbs 128, to fix the errors".format(warn_chunkmbs)
+        )
     return {
-        'total': total,
-        'map': unique + multi,
-        'unique': unique,
-        'multi': multi,
-        'unmap': total - unique - multi,
-        }
+        "total": total,
+        "map": unique + multi,
+        "unique": unique,
+        "multi": multi,
+        "unmap": total - unique - multi,
+    }
 
 
 class StarConfig(object):
@@ -114,52 +119,52 @@ class StarConfig(object):
     output files
     parser ?!
     """
+
     def __init__(self, **kwargs):
         self = update_obj(self, kwargs, force=True)
         self.init_args()
 
-
     def init_args(self):
         args_init = {
-            'aligner': 'STAR',
-            'fq1': None,
-            'fq2': None,
-            'out_dir': None,
-            'index': None,            
-            'index_name': None,
-            'smp_name': None,
-            'extra_para': None,
-            'smp_name': None,
-            'threads': 1,
-            'overwrite': False,
-            'n_map': 20,
-            'unique_only': False,
-            'keep_tmp': False,
-            'keep_unmap': True,
-            'large_insert': False,
-            'genomeLoad': 'NoSharedMemory',
+            "aligner": "STAR",
+            "fq1": None,
+            "fq2": None,
+            "out_dir": None,
+            "index": None,
+            "index_name": None,
+            "smp_name": None,
+            "extra_para": None,
+            "smp_name": None,
+            "threads": 1,
+            "overwrite": False,
+            "n_map": 20,
+            "unique_only": False,
+            "keep_tmp": False,
+            "keep_unmap": True,
+            "large_insert": False,
+            "genomeLoad": "NoSharedMemory",
         }
         self = update_obj(self, args_init, force=False)
-        self.hiseq_type = 'STAR_r1'
+        self.hiseq_type = "STAR_r1"
         self.init_fx()
         if not isinstance(self.out_dir, str):
             self.out_dir = str(pathlib.Path.cwd())
         self.out_dir = file_abspath(self.out_dir)
         # index name
         if not AlignIndex(self.index, self.aligner).is_valid():
-            raise ValueError('index not valid, {}'.format(self.index))
+            raise ValueError("index not valid, {}".format(self.index))
         if self.index_name is None:
             self.index_name = AlignIndex(self.index).index_name()
         # samll genome
-        self.small_genome = AlignIndex(
-            self.index, self.aligner).index_size() < 10000000
+        self.small_genome = (
+            AlignIndex(self.index, self.aligner).index_size() < 10000000
+        )
         self.seed_max = 5 if self.small_genome else 50
         self.n_map = 1 if self.unique_only else self.n_map
         if self.n_map < 1:
-            self.n_map = 20 # default, see unique_only
+            self.n_map = 20  # default, see unique_only
         # update files
         self.init_files()
-
 
     def init_fx(self):
         """
@@ -173,41 +178,41 @@ class StarConfig(object):
         # if self.fq2 is not None and not check_fx(self.fq2):
         #     raise ValueError('--fq2, not exists, or empty')
         if not check_fx_args(self.fq1, self.fq2):
-            raise ValueError('--fq1, --fq2 faild, not properly paired')
+            raise ValueError("--fq1, --fq2 faild, not properly paired")
         # format
         self.fq1 = file_abspath(self.fq1)
         self.fq2 = file_abspath(self.fq2)
-        self.fx_format = Fastx(self.fq1).format # fasta/q
+        self.fx_format = Fastx(self.fq1).format  # fasta/q
         self.is_paired = check_fx_paired(self.fq1, self.fq2)
         if self.smp_name is None:
             self.smp_name = fx_name(self.fq1, fix_pe=True)
         self.rep_list = os.path.join(self.out_dir, self.smp_name)
 
-
     def init_files(self):
-        self.project_dir = os.path.join(self.out_dir, self.smp_name, 
-            self.index_name)
-        self.config_dir = os.path.join(self.project_dir, 'config')
+        self.project_dir = os.path.join(
+            self.out_dir, self.smp_name, self.index_name
+        )
+        self.config_dir = os.path.join(self.project_dir, "config")
         # output files
         prefix = os.path.join(self.project_dir, self.smp_name)
         default_files = {
-#             'project_dir': self.project_dir,
-            'config_yaml': os.path.join(self.config_dir, 'config.yaml'),
-            'cmd_shell': os.path.join(self.project_dir, 'cmd.sh'),
-            'bam': prefix + '.bam',
-            'sam': prefix + '.sam',
-            'unmap': prefix + '.unmap.' + self.fx_format,
-            'unmap1': prefix + '.unmap.1.' + self.fx_format, # 
-            'unmap2': prefix + '.unmap.2.' + self.fx_format, #
-            'bam_raw': prefix + 'Aligned.sortedByCoord.out.bam',
-            'log_raw': prefix + 'Log.final.out',
-            'unmap_raw': prefix + 'Unmapped.out',
-            'unmap1_raw': prefix + 'Unmapped.out.mate1',
-            'unmap2_raw': prefix + 'Unmapped.out.mate2',
-            'align_log': prefix + '.align.log',
-            'align_stat': prefix + '.align.stat',
-            'align_json': prefix + '.align.json',
-            'align_flagstat': prefix + '.align.flagstat',
+            #             'project_dir': self.project_dir,
+            "config_yaml": os.path.join(self.config_dir, "config.yaml"),
+            "cmd_shell": os.path.join(self.project_dir, "cmd.sh"),
+            "bam": prefix + ".bam",
+            "sam": prefix + ".sam",
+            "unmap": prefix + ".unmap." + self.fx_format,
+            "unmap1": prefix + ".unmap.1." + self.fx_format,  #
+            "unmap2": prefix + ".unmap.2." + self.fx_format,  #
+            "bam_raw": prefix + "Aligned.sortedByCoord.out.bam",
+            "log_raw": prefix + "Log.final.out",
+            "unmap_raw": prefix + "Unmapped.out",
+            "unmap1_raw": prefix + "Unmapped.out.mate1",
+            "unmap2_raw": prefix + "Unmapped.out.mate2",
+            "align_log": prefix + ".align.log",
+            "align_stat": prefix + ".align.stat",
+            "align_json": prefix + ".align.json",
+            "align_flagstat": prefix + ".align.flagstat",
         }
         self = update_obj(self, default_files, force=True)
         self.align_prefix = prefix
@@ -219,18 +224,17 @@ class Star(object):
     Alignment, using STAR
     Single index, SE/PE
     """
+
     def __init__(self, **kwargs):
         self = update_obj(self, kwargs, force=True)
         self.init_args()
 
-
     def init_args(self):
         args_local = StarConfig(**self.__dict__)
-        self = update_obj(self, args_local.__dict__, force=True) # update
-        self.aligner = 'STAR' # force changed
-        self.get_cmd()        
+        self = update_obj(self, args_local.__dict__, force=True)  # update
+        self.aligner = "STAR"  # force changed
+        self.get_cmd()
         Config().dump(self.__dict__, self.config_yaml)
-
 
     def get_cmd(self):
         """The command line
@@ -238,15 +242,15 @@ class Star(object):
         # STAR unique mapping  #
         ########################
         --outFilterMultimapNmax 1
-        
+
         --seedPerWindowNmax 5, for small genome
 
         Parameters
         ----------
         For sharing memory in STAR
-        by Devon Ryan: https://www.biostars.org/p/260069/#260077 
+        by Devon Ryan: https://www.biostars.org/p/260069/#260077
         by Dobin: https://github.com/alexdobin/STAR/pull/26
-        
+
         --genomeLoad
 
         NoSharedMemory: each job use its own copy
@@ -259,42 +263,47 @@ class Star(object):
         1. NoSharedMemory: (?) what if other jobs using it?
 
         pratice: for general usage
-        1. LoadAndRemove: (?) 
+        1. LoadAndRemove: (?)
 
         pratice: for multiple alignment together.
         1. LoadAndExit
         2. (loop over samples): LoadAndKeep
         3. Remove
         """
-        args_extra = self.extra_para if self.extra_para else ''
-        args_reader = 'zcat' if self.fq1.endswith('.gz') else '-'
-        args_fq2 = self.fq2 if self.is_paired else ''
+        args_extra = self.extra_para if self.extra_para else ""
+        args_reader = "zcat" if self.fq1.endswith(".gz") else "-"
+        args_fq2 = self.fq2 if self.is_paired else ""
         # command
-        cmd_main = ' '.join([
-            '{}'.format(shutil.which('STAR')),
-            '--genomeLoad {}'.format(self.genomeLoad), #
-            '--runMode alignReads',
-            '--genomeDir {}'.format(self.index),
-            '--readFilesCommand {}'.format(args_reader),            
-            '--readFilesIn {} {}'.format(self.fq1, args_fq2),
-            '--outFileNamePrefix {}'.format(self.align_prefix),
-            '--runThreadN {}'.format(self.threads),
-            '--limitBAMsortRAM 10000000000',
-            '--outSAMtype BAM SortedByCoordinate',
-            '--outFilterMismatchNoverLmax 0.07',
-            '--seedSearchStartLmax 20',
-            '--outReadsUnmapped Fastx', # self.unmap1,
-            '--outFilterMultimapNmax {}'.format(self.n_map),
-            '--seedPerWindowNmax {}'.format(self.seed_max),
-            args_extra,
-            ])
+        cmd_main = " ".join(
+            [
+                "{}".format(shutil.which("STAR")),
+                "--genomeLoad {}".format(self.genomeLoad),  #
+                "--runMode alignReads",
+                "--genomeDir {}".format(self.index),
+                "--readFilesCommand {}".format(args_reader),
+                "--readFilesIn {} {}".format(self.fq1, args_fq2),
+                "--outFileNamePrefix {}".format(self.align_prefix),
+                "--runThreadN {}".format(self.threads),
+                "--limitBAMsortRAM 10000000000",
+                "--outSAMtype BAM SortedByCoordinate",
+                "--outFilterMismatchNoverLmax 0.07",
+                "--seedSearchStartLmax 20",
+                "--outReadsUnmapped Fastx",  # self.unmap1,
+                "--outFilterMultimapNmax {}".format(self.n_map),
+                "--seedPerWindowNmax {}".format(self.seed_max),
+                args_extra,
+            ]
+        )
         # add: flagstat
-        self.cmd = ' '.join([
-            cmd_main,
-            '&& samtools index {}'.format(self.bam_raw),
-            '&& samtools flagstat {} > {}'.format(self.bam_raw, self.align_flagstat)
-        ])
-
+        self.cmd = " ".join(
+            [
+                cmd_main,
+                "&& samtools index {}".format(self.bam_raw),
+                "&& samtools flagstat {} > {}".format(
+                    self.bam_raw, self.align_flagstat
+                ),
+            ]
+        )
 
     def fix_out_files(self):
         """
@@ -320,41 +329,48 @@ class Star(object):
         # remove old files
         del_list = []
         if not self.keep_unmap:
-            del_list.extend([
-                self.unmap1, self.unmap2, self.unmap,
-                self.unmap1_raw, self.unmap2_raw])
+            del_list.extend(
+                [
+                    self.unmap1,
+                    self.unmap2,
+                    self.unmap,
+                    self.unmap1_raw,
+                    self.unmap2_raw,
+                ]
+            )
         remove_file(del_list, ask=False)
-
 
     def run(self):
         if file_exists(self.bam) and not self.overwrite:
-            log.info('Star() skipped, file exists: {}'.format(self.bam))
+            log.info("Star() skipped, file exists: {}".format(self.bam))
         else:
             # save cmd
-            with open(self.cmd_shell, 'wt') as w:
-                w.write(self.cmd + '\n')
+            with open(self.cmd_shell, "wt") as w:
+                w.write(self.cmd + "\n")
             try:
                 run_shell_cmd(self.cmd)
             except:
-                log.error('Star() failed, check {}'.format(self.align_log))
+                log.error("Star() failed, check {}".format(self.align_log))
         # for output files
         self.fix_out_files()
         if not check_file(self.bam, check_empty=True):
-            log.error('Star() failed, not bam: {}'.format(self.bam))
+            log.error("Star() failed, not bam: {}".format(self.bam))
         # log
         df = parse_star(self.align_log)
-        df.update({
-            'name': self.smp_name,
-            'index': self.index_name,
-            'unique_only': self.unique_only,
-            })
+        df.update(
+            {
+                "name": self.smp_name,
+                "index": self.index_name,
+                "unique_only": self.unique_only,
+            }
+        )
         Config().dump(df, self.align_json)
         # remove temp files
         del_list = [self.unmap1, self.unmap2, self.unmap]
         if not self.keep_unmap:
             remove_file(del_list, ask=False)
         if not file_exists(self.bam):
-            log.error('Star() failed, no bam output: {}'.format(self.bam))
+            log.error("Star() failed, no bam output: {}".format(self.bam))
         return (self.bam, self.unmap1, self.unmap2)
 
 
@@ -366,7 +382,7 @@ class Star(object):
 #         '$ python star.py -1 f1.fq -2 f2.fq -x genome -o output',
 #         '# unique reads, update index_name',
 #         '$ python star.py -1 f1.fq -x genome -o output -u -in 01.genome',
-#     ])    
+#     ])
 #     parser = argparse.ArgumentParser(
 #         prog='run_star',
 #         description='run STAR program',
@@ -384,12 +400,12 @@ class Star(object):
 #                         help='The name of the index')
 #     parser.add_argument('-n', '--smp-name', default=None, dest='smp_name',
 #                         help='The name of the sample')
-#     parser.add_argument('-p', '--threads', default=1, 
+#     parser.add_argument('-p', '--threads', default=1,
 #                         help='Number of threads, default: [1]')
 #     parser.add_argument('-w', '--overwrite', action='store_true',
 #                         help='Overwrite the exist files')
 #     parser.add_argument('-u', '--unique-only', action='store_true',
-#                         dest='unique_only', 
+#                         dest='unique_only',
 #                         help='Report unique mapped reads only')
 #     parser.add_argument('-l', '--large-insert', action='store_true',
 #                         dest='large_insert',
@@ -402,32 +418,61 @@ class Star(object):
 #                         help='Add extra parameters, eg: "-X 2000"')
 #     return parser
 
+
 def get_args_io():
-    example = '\n'.join([
-        'Examples:',
-        '$ python star.py -1 f1.fq -x genome -o output',
-        '# add extra para',
-        '$ python star.py -1 f1.fq -2 f2.fq -x genome -o output',
-        '# unique reads, update index_name',
-        '$ python star.py -1 f1.fq -x genome -o output -u -in 01.genome',
-    ])    
+    example = "\n".join(
+        [
+            "Examples:",
+            "$ python star.py -1 f1.fq -x genome -o output",
+            "# add extra para",
+            "$ python star.py -1 f1.fq -2 f2.fq -x genome -o output",
+            "# unique reads, update index_name",
+            "$ python star.py -1 f1.fq -x genome -o output -u -in 01.genome",
+        ]
+    )
     parser = argparse.ArgumentParser(
-        prog='run_star',
-        description='run STAR program',
+        prog="run_star",
+        description="run STAR program",
         epilog=example,
-        formatter_class=argparse.RawTextHelpFormatter)
-    parser.add_argument('-1', '--fq1', required=True,
-                        help='Fasta/q file, read1 of PE, or SE read')
-    parser.add_argument('-2', '--fq2', required=False, default=None,
-                        help='Fasta/q file, read2 of PE, or SE read, optional')
-    parser.add_argument('-o', '--out-dir', dest='out_dir', default=None,
-                        help='Directory saving results, default: [cwd]')
-    parser.add_argument('-x', '--index', required=True,
-                        help='The alignment index for STAR')
-    parser.add_argument('-in', '--index-name', default=None, dest='index_name',
-                        help='The name of the index')
-    parser.add_argument('-n', '--smp-name', default=None, dest='smp_name',
-                        help='The name of the sample')
+        formatter_class=argparse.RawTextHelpFormatter,
+    )
+    parser.add_argument(
+        "-1",
+        "--fq1",
+        required=True,
+        help="Fasta/q file, read1 of PE, or SE read",
+    )
+    parser.add_argument(
+        "-2",
+        "--fq2",
+        required=False,
+        default=None,
+        help="Fasta/q file, read2 of PE, or SE read, optional",
+    )
+    parser.add_argument(
+        "-o",
+        "--out-dir",
+        dest="out_dir",
+        default=None,
+        help="Directory saving results, default: [cwd]",
+    )
+    parser.add_argument(
+        "-x", "--index", required=True, help="The alignment index for STAR"
+    )
+    parser.add_argument(
+        "-in",
+        "--index-name",
+        default=None,
+        dest="index_name",
+        help="The name of the index",
+    )
+    parser.add_argument(
+        "-n",
+        "--smp-name",
+        default=None,
+        dest="smp_name",
+        help="The name of the sample",
+    )
     return parser
 
 
@@ -440,6 +485,5 @@ def main():
     Star(**args).run()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
-

@@ -35,24 +35,6 @@ from hiseq.utils.utils import log, update_obj, Config, get_date
 from hiseq.utils.file import file_abspath
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 """
 pass
 

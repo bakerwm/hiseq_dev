@@ -35,24 +35,24 @@ class BamFragSize(object):
     multiple BAM files
     rename (labels)
     """
+
     def __init__(self, **kwargs):
         self = update_obj(self, kwargs, force=True)
-        self.init_args() # update, default args
-
+        self.init_args()  # update, default args
 
     def init_args(self):
         args_init = {
-            'bam': None,
-            'out_dir': None,
-            'labels': None,
-            'as_se': False,
-            'max_count': 0,
-            'strandness': False,
-            'csv_file': None,
-            'plot_file': None,
-            'threads': 4,
-            'parallel_jobs': 1,
-            'overwrite': False
+            "bam": None,
+            "out_dir": None,
+            "labels": None,
+            "as_se": False,
+            "max_count": 0,
+            "strandness": False,
+            "csv_file": None,
+            "plot_file": None,
+            "threads": 4,
+            "parallel_jobs": 1,
+            "overwrite": False,
         }
         self = update_obj(self, args_init, force=False)
         # bam
@@ -61,8 +61,11 @@ class BamFragSize(object):
         elif isinstance(self.bam, list):
             pass
         else:
-            raise ValueError('bam, str or list expected, got {}'.format(
-                type(self.bam).__name__))
+            raise ValueError(
+                "bam, str or list expected, got {}".format(
+                    type(self.bam).__name__
+                )
+            )
         if isinstance(self.labels, str):
             self.labels = [self.labels]
         elif isinstance(self.labels, list):
@@ -77,8 +80,9 @@ class BamFragSize(object):
         if self.labels is None:
             self.labels = bam_names
         else:
-            self.labels = self.labels[:len(bam_names)] + bam_names[len(self.labels):]
-
+            self.labels = (
+                self.labels[: len(bam_names)] + bam_names[len(self.labels) :]
+            )
 
     def run_single_bam(self, bam):
         """Run for single bam
@@ -86,22 +90,21 @@ class BamFragSize(object):
         pdf
         require out_dir
         """
-        bam_i = self.bam.index(bam) # index for bam file
-        labels = self.labels[bam_i] # labels for bam
-        csv_file = os.path.join(self.out_dir, labels + '.fragsize.csv')
+        bam_i = self.bam.index(bam)  # index for bam file
+        labels = self.labels[bam_i]  # labels for bam
+        csv_file = os.path.join(self.out_dir, labels + ".fragsize.csv")
         if os.path.exists(csv_file) and not self.overwrite:
-            log.info('BamFragSize() skipped, file exists: {}'.format(csv_file))
+            log.info("BamFragSize() skipped, file exists: {}".format(csv_file))
         else:
             args_local = {
-                'bam': bam,
-                'out_dir': self.out_dir,
-                'labels': labels,
-                'as_se': self.as_se,
-                'strandness': self.strandness,
+                "bam": bam,
+                "out_dir": self.out_dir,
+                "labels": labels,
+                "as_se": self.as_se,
+                "strandness": self.strandness,
             }
             BamFragSizeR1(**args_local).run()
             # BamPEFragSize(**args_local).plot(pdf_file)
-
 
     def run_multiple_bam(self):
         if len(self.bam) > 1 and self.parallel_jobs > 1:
@@ -110,35 +113,38 @@ class BamFragSize(object):
         else:
             [self.run_single_bam(i) for i in self.bam]
         # plot merge
-        csv_file_list = [os.path.join(self.out_dir, i + '.fragsize.csv') for i in self.labels]
+        csv_file_list = [
+            os.path.join(self.out_dir, i + ".fragsize.csv")
+            for i in self.labels
+        ]
         csv_file_list = [i for i in csv_file_list if os.path.exists(i)]
-        pdf_merge = os.path.join(self.out_dir, 'frag_size.pdf')
+        pdf_merge = os.path.join(self.out_dir, "frag_size.pdf")
         # save to plot
         # to-do: matplotlib function
         hiseq_dir = os.path.dirname(hiseq.__file__)
-        frag_plot_r = os.path.join(hiseq_dir, 'bin', 'qc_fragsize.R')
-        stdout = os.path.join(self.out_dir, 'frag_plot.plot.stdout')
-        stderr = os.path.join(self.out_dir, 'frag_plot.plot.stderr')
-        cmd_file = os.path.join(self.out_dir, 'frag_plot.plot.cmd.sh')
-        cmd = ' '.join([
-            'Rscript',
-            frag_plot_r,
-            pdf_merge,
-            ' '.join(csv_file_list),
-            '1> {}'.format(stdout),
-            '2> {}'.format(stderr)
-        ])
-        with open(cmd_file, 'wt') as w:
-            w.write(cmd+'\n')
+        frag_plot_r = os.path.join(hiseq_dir, "bin", "qc_fragsize.R")
+        stdout = os.path.join(self.out_dir, "frag_plot.plot.stdout")
+        stderr = os.path.join(self.out_dir, "frag_plot.plot.stderr")
+        cmd_file = os.path.join(self.out_dir, "frag_plot.plot.cmd.sh")
+        cmd = " ".join(
+            [
+                "Rscript",
+                frag_plot_r,
+                pdf_merge,
+                " ".join(csv_file_list),
+                "1> {}".format(stdout),
+                "2> {}".format(stderr),
+            ]
+        )
+        with open(cmd_file, "wt") as w:
+            w.write(cmd + "\n")
         try:
             run_shell_cmd(cmd)
         except:
-            log.warning('fragsize.py failed')
-
+            log.warning("fragsize.py failed")
 
     def run(self):
         self.run_multiple_bam()
-
 
 
 class BamFragSizeR1(object):
@@ -169,31 +175,32 @@ class BamFragSizeR1(object):
     > Table.csv
     length strand count
     """
+
     def __init__(self, **kwargs):
         self = update_obj(self, kwargs, force=True)
         self.init_args()
 
-
     def init_args(self):
         args_init = {
-            'bam': None,
-            'out_dir': None,
-            'labels': None,
-            'as_se': False,
-            'max_count': 0,
-            'strandness': False,
-            'csv_file': None,
-            'plot_file': None,
+            "bam": None,
+            "out_dir": None,
+            "labels": None,
+            "as_se": False,
+            "max_count": 0,
+            "strandness": False,
+            "csv_file": None,
+            "plot_file": None,
         }
         self = update_obj(self, args_init, force=False)
         # only for single bam file
         if not isinstance(self.bam, str):
-            raise ValueError('str expected, {} got'.format(
-                type(self.bam).__name__))
+            raise ValueError(
+                "str expected, {} got".format(type(self.bam).__name__)
+            )
         if not self.is_bam(self.bam):
-            raise Exception('bam={}, is not bam file'.format(self.bam))
+            raise Exception("bam={}, is not bam file".format(self.bam))
         # bai
-        if not file_exists(self.bam+'.bai'):
+        if not file_exists(self.bam + ".bai"):
             Bam(self.bam).index()
         # out_dir
         if not isinstance(self.out_dir, str):
@@ -207,10 +214,13 @@ class BamFragSizeR1(object):
             self.labels = file_prefix(self.bam)
         # output files
         if self.csv_file is None:
-            self.csv_file = os.path.join(self.out_dir, self.labels + '.fragsize.csv')
+            self.csv_file = os.path.join(
+                self.out_dir, self.labels + ".fragsize.csv"
+            )
         if self.plot_file is None:
-            self.plot_file = os.path.join(self.out_dir, self.labels + '.fragsize.pdf')
-
+            self.plot_file = os.path.join(
+                self.out_dir, self.labels + ".fragsize.pdf"
+            )
 
     def is_empty(self, bam):
         """Check input file is empty or not
@@ -220,7 +230,6 @@ class BamFragSizeR1(object):
         pysam.index(bam)
         sam = pysam.Samfile(bam)
         return sam.count() == 0 and sam.mapped == 0
-
 
     def is_bam(self, bam):
         """Check input is BAM file
@@ -233,9 +242,8 @@ class BamFragSizeR1(object):
             bam = self.bam
         out = False
         if isinstance(self.bam, str):
-            out = self.bam.endswith('.bam') and os.path.exists(self.bam)
+            out = self.bam.endswith(".bam") and os.path.exists(self.bam)
         return out
-
 
     def is_paired(self, bam, topn=1000):
         """Check input bam is Paired end alignment"""
@@ -246,21 +254,24 @@ class BamFragSizeR1(object):
             samfile.close()
         return out
 
-
     def cal_freq(self, x, return_dataframe=True):
         """Calculate the frequency of list
         ['length', 'strand']
         return dataframe
         """
-        header = ['length', 'strand', 'count']
+        header = ["length", "strand", "count"]
         if isinstance(x, list):
-            df = pd.DataFrame(x, columns=header).groupby(['length', 'strand']).count().reset_index()
+            df = (
+                pd.DataFrame(x, columns=header)
+                .groupby(["length", "strand"])
+                .count()
+                .reset_index()
+            )
         else:
             df = pd.DataFrame(columns=header)
         if not self.strandness:
-            df['strand'] = '*'
+            df["strand"] = "*"
         return df
-
 
     def cal_frag_size(self, bam=None, chunk=1000000):
         """Extract the read length
@@ -275,51 +286,62 @@ class BamFragSizeR1(object):
             pass
         # empty check
         if self.is_empty(bam):
-            log.error('bam is empty: {}'.format(bam))
-            return pd.DataFrame(columns=['length','strand','count','id']) #!!
+            log.error("bam is empty: {}".format(bam))
+            return pd.DataFrame(
+                columns=["length", "strand", "count", "id"]
+            )  #!!
         # read sam/bam file
         sam = pysam.AlignmentFile(bam)
-        counter  = 0
+        counter = 0
         frag_size_list = []
         frames = []
         for read in sam:
             if self.as_se:
                 # reads sizes
-                if not read.is_unmapped \
-                and not read.is_duplicate > 0:
+                if not read.is_unmapped and not read.is_duplicate > 0:
                     counter += 1
-                    strand = '-' if read.is_reverse else '+'
-                    frag_size_list.append([read.infer_query_length(), strand, 1])
+                    strand = "-" if read.is_reverse else "+"
+                    frag_size_list.append(
+                        [read.infer_query_length(), strand, 1]
+                    )
             else:
-                strand = '*'
+                strand = "*"
                 # fragment sizes
-                if read.is_proper_pair \
-                and not read.is_unmapped \
-                and not read.mate_is_unmapped \
-                and not read.is_read1 \
-                and not read.is_duplicate \
-                and read.template_length > 0:
+                if (
+                    read.is_proper_pair
+                    and not read.is_unmapped
+                    and not read.mate_is_unmapped
+                    and not read.is_read1
+                    and not read.is_duplicate
+                    and read.template_length > 0
+                ):
                     counter += 1
                     frag_size_list.append([read.template_length, strand, 1])
             # sample size
-            if self.max_count > 0 and counter  > self.max_count:
-                log.info('stop at: {}'.format(counter))
-                break # stop
+            if self.max_count > 0 and counter > self.max_count:
+                log.info("stop at: {}".format(counter))
+                break  # stop
             # chunk
-            if counter > 0 and counter%chunk == 0:
+            if counter > 0 and counter % chunk == 0:
                 frames.append(self.cal_freq(frag_size_list))
-                frag_size_list = [] # empty
-                log.info('{} : {} {}'.format('Processed', counter , self.labels))
+                frag_size_list = []  # empty
+                log.info(
+                    "{} : {} {}".format("Processed", counter, self.labels)
+                )
         # last chunk
         if len(frag_size_list) > 0:
             frames.append(self.cal_freq(frag_size_list))
-            frag_size_list = [] # empty
-            log.info('{} : {} {}'.format('Processed', counter , self.labels))
+            frag_size_list = []  # empty
+            log.info("{} : {} {}".format("Processed", counter, self.labels))
         # overall
-        df = pd.concat(frames, axis=0).groupby(['length', 'strand']).sum().reset_index()
-        df['id'] = self.labels
+        df = (
+            pd.concat(frames, axis=0)
+            .groupby(["length", "strand"])
+            .sum()
+            .reset_index()
+        )
+        df["id"] = self.labels
         return df
-
 
     def distribution(self):
         """Basic statistics values
@@ -328,11 +350,21 @@ class BamFragSizeR1(object):
         """
         if self.freq_table.shape[0] == 0:
             out = pd.DataFrame(
-                columns=['mean', 'median', 'mode', 'std', 'min', 'max', 'Q1',
-                         'Q2', 'Q3'])
+                columns=[
+                    "mean",
+                    "median",
+                    "mode",
+                    "std",
+                    "min",
+                    "max",
+                    "Q1",
+                    "Q2",
+                    "Q3",
+                ]
+            )
         else:
-            val = self.freq_table['length']
-            freq = self.freq_table['count']
+            val = self.freq_table["length"]
+            freq = self.freq_table["count"]
             inserts = np.repeat(val, freq)
             # statistics
             q_mean = np.mean(inserts)
@@ -344,40 +376,49 @@ class BamFragSizeR1(object):
             q_max = np.max(inserts)
             q_qual = np.quantile(inserts, [0.25, 0.5, 0.75], axis=0)
             # core distribution
-            s = np.array([q_mean, q_median, q_mode, q_std, q_min, q_max]).round(2)
+            s = np.array(
+                [q_mean, q_median, q_mode, q_std, q_min, q_max]
+            ).round(2)
             s = np.append(s, q_qual)
             # DataFrame
             out = pd.DataFrame(s).T
-            out.columns = ['mean', 'median', 'mode', 'std', 'min', 'max', 'Q1',
-                           'Q2', 'Q3']
+            out.columns = [
+                "mean",
+                "median",
+                "mode",
+                "std",
+                "min",
+                "max",
+                "Q1",
+                "Q2",
+                "Q3",
+            ]
         return out
-
 
     def _tmp(self):
         """
         Create a tmp file to save json object
         """
-        tmp = tempfile.NamedTemporaryFile(prefix='tmp', suffix='.csv',
-            delete=False)
+        tmp = tempfile.NamedTemporaryFile(
+            prefix="tmp", suffix=".csv", delete=False
+        )
         return tmp.name
-
 
     def save_as(self, csv_file=None):
         """Save to file"""
         if csv_file is None:
-            csv_file = self.csv_file # default
+            csv_file = self.csv_file  # default
         if csv_file is None:
             csv_file = self._tmp()
-        log.info('saving to file: {}'.format(csv_file))
+        log.info("saving to file: {}".format(csv_file))
         try:
             self.freq_table.to_csv(csv_file, index=False)
             # save statistics
-            stat_file = csv_file + '.stat'
+            stat_file = csv_file + ".stat"
             da = self.distribution()
-            da.to_csv(stat_file, sep='\t', index=False)
+            da.to_csv(stat_file, sep="\t", index=False)
         except:
-            log.warning('failed saving file: {}'.format(csv_file))
-
+            log.warning("failed saving file: {}".format(csv_file))
 
     def plot(self, plot_file=None):
         """Generate freq table plot
@@ -386,32 +427,38 @@ class BamFragSizeR1(object):
         if plot_file is None:
             plot_file = self.plot_file
         hiseq_dir = os.path.dirname(hiseq.__file__)
-        frag_plot_r = os.path.join(hiseq_dir, 'bin', 'qc_fragsize.R')
-        stdout = os.path.join(self.out_dir, self.labels+'.fragsize.plot.stdout')
-        stderr = os.path.join(self.out_dir, self.labels+'.fragsize.plot.stderr')
-        cmd_file = os.path.join(self.out_dir, self.labels+'.fragsize.plot.cmd.sh')
-        cmd = ' '.join([
-            'Rscript',
-            frag_plot_r,
-            plot_file,
-            self.csv_file,
-            '1> {}'.format(stdout),
-            '2> {}'.format(stderr)
-        ])
-        with open(cmd_file, 'wt') as w:
-            w.write(cmd+'\n')
+        frag_plot_r = os.path.join(hiseq_dir, "bin", "qc_fragsize.R")
+        stdout = os.path.join(
+            self.out_dir, self.labels + ".fragsize.plot.stdout"
+        )
+        stderr = os.path.join(
+            self.out_dir, self.labels + ".fragsize.plot.stderr"
+        )
+        cmd_file = os.path.join(
+            self.out_dir, self.labels + ".fragsize.plot.cmd.sh"
+        )
+        cmd = " ".join(
+            [
+                "Rscript",
+                frag_plot_r,
+                plot_file,
+                self.csv_file,
+                "1> {}".format(stdout),
+                "2> {}".format(stderr),
+            ]
+        )
+        with open(cmd_file, "wt") as w:
+            w.write(cmd + "\n")
         try:
             run_shell_cmd(cmd)
         except:
-            log.warning('fragsize.py failed')
-        return(plot_file)
-
+            log.warning("fragsize.py failed")
+        return plot_file
 
     def run(self):
-        self.freq_table = self.cal_frag_size(self.bam) # dataframe
-        self.save_as() # to csv
-        self.plot() # to pdf
-
+        self.freq_table = self.cal_frag_size(self.bam)  # dataframe
+        self.save_as()  # to csv
+        self.plot()  # to pdf
 
 
 def frag_size_picard(bam, out_dir=None, smp_name=None):
@@ -451,30 +498,35 @@ def frag_size_picard(bam, out_dir=None, smp_name=None):
         if smp_name is None:
             smp_name = file_prefix(bam)
         # files
-        out_metrics = os.path.join(out_dir, smp_name+'.insert_meterics.txt')
-        cmd_txt = os.path.join(out_dir, smp_name+'.insert_mertics.cmd.sh')
-        stdout = os.path.join(out_dir, smp_name+'.insert_mertics.stdout')
-        stderr = os.path.join(out_dir, smp_name+'.insert_mertics.stderr')
+        out_metrics = os.path.join(out_dir, smp_name + ".insert_meterics.txt")
+        cmd_txt = os.path.join(out_dir, smp_name + ".insert_mertics.cmd.sh")
+        stdout = os.path.join(out_dir, smp_name + ".insert_mertics.stdout")
+        stderr = os.path.join(out_dir, smp_name + ".insert_mertics.stderr")
         # command
-        cmd = ' '.join([
-            '{}'.format(which('picard')), # 
-            'CollectInsertSizeMetrics',
-            'I={}'.format(bam),
-            'O={}'.format(out_metrics),
-            'M=0.05',
-            '1> {}'.format(stdout),
-            '2> {}'.format(stderr),
-        ])
-        with open(cmd_txt, 'wt') as w:
-            w.write(cmd+'\n')
+        cmd = " ".join(
+            [
+                "{}".format(which("picard")),  #
+                "CollectInsertSizeMetrics",
+                "I={}".format(bam),
+                "O={}".format(out_metrics),
+                "M=0.05",
+                "1> {}".format(stdout),
+                "2> {}".format(stderr),
+            ]
+        )
+        with open(cmd_txt, "wt") as w:
+            w.write(cmd + "\n")
         try:
             run_shell_cmd(cmd)
         except:
-            log.error('frag_size_picard() failed')
+            log.error("frag_size_picard() failed")
     else:
-        log.error('frag_size_picard() failed, expect str, got {}'.format(
-            type(bam).__name__))
-        
+        log.error(
+            "frag_size_picard() failed, expect str, got {}".format(
+                type(bam).__name__
+            )
+        )
+
 
 def frag_size_deeptools(bam, out):
     """Calculate PE fragment size, using deeptools
@@ -511,29 +563,60 @@ def frag_size_samtools(infile, outfile=None):
     d = sorted(d.items(), key=lambda x: x[0])
 
     if not outfile is None:
-        with open(outfile, 'wt') as w:
+        with open(outfile, "wt") as w:
             for k, v in d:
-                w.write(str(k) + '\t' + str(v) + '\n')
+                w.write(str(k) + "\t" + str(v) + "\n")
     return d
 
 
 def get_args():
-    parser = argparse.ArgumentParser(description='hiseq fragsize -i bam -o out_dir')
-    parser.add_argument('-i', '--bam', nargs='+', required=True,
-        help='BAM files')
-    parser.add_argument('-o', '--out-dir', dest='out_dir', default=None,
-        help='output directory to save results')
-    parser.add_argument('-l', '--labels', nargs='+', default=None,
-        help='label of the bam files')
-    parser.add_argument('-s', '--strandness', action='store_true',
-        help='Check strandness for bam files')
-    parser.add_argument('--se', dest='as_se', action='store_true',
-        help='Treat BAM file as SE, calculate the read size')
-    parser.add_argument('-p', '--threads', default=4, type=int,
-        help='number of processes, default: [4]')
-    parser.add_argument('-j', '--parallel-jobs', default=1, type=int,
-        dest='parallel_jobs',
-        help='Number of jobs run in parallel, default: [1]')
+    parser = argparse.ArgumentParser(
+        description="hiseq fragsize -i bam -o out_dir"
+    )
+    parser.add_argument(
+        "-i", "--bam", nargs="+", required=True, help="BAM files"
+    )
+    parser.add_argument(
+        "-o",
+        "--out-dir",
+        dest="out_dir",
+        default=None,
+        help="output directory to save results",
+    )
+    parser.add_argument(
+        "-l",
+        "--labels",
+        nargs="+",
+        default=None,
+        help="label of the bam files",
+    )
+    parser.add_argument(
+        "-s",
+        "--strandness",
+        action="store_true",
+        help="Check strandness for bam files",
+    )
+    parser.add_argument(
+        "--se",
+        dest="as_se",
+        action="store_true",
+        help="Treat BAM file as SE, calculate the read size",
+    )
+    parser.add_argument(
+        "-p",
+        "--threads",
+        default=4,
+        type=int,
+        help="number of processes, default: [4]",
+    )
+    parser.add_argument(
+        "-j",
+        "--parallel-jobs",
+        default=1,
+        type=int,
+        dest="parallel_jobs",
+        help="Number of jobs run in parallel, default: [1]",
+    )
     return parser
 
 
@@ -542,11 +625,11 @@ def main():
     BamFragSize(**args).run()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
 
 #
-    
+
 # class BamPEFragSize(object):
 #     """
 #     Calculate insert size of PE, single BAM

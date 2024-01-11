@@ -33,19 +33,19 @@ class BaseContentR1(object):
     Check Per Base Content for single fastq file
     using: FastQC or Falco
     """
+
     def __init__(self, fq, **kwargs):
         self = update_obj(self, kwargs, force=True)
         self.fq = fq
         self.init_args()
 
-
     def init_args(self):
         args = {
-            'out_dir': None,
-            'parallel_jobs': 1,
-            'overwrite': False,
-            'left_end': None,
-            'rm_tmp': False,
+            "out_dir": None,
+            "parallel_jobs": 1,
+            "overwrite": False,
+            "left_end": None,
+            "rm_tmp": False,
         }
         self = update_obj(self, args, force=False)
         # if not isinstance(self.out_dir, str):
@@ -59,46 +59,48 @@ class BaseContentR1(object):
         # name = os.path.splitext(name)[0] # remove '.fq'
         # self.name = name
         self.name = fx_name(self.fq, fix_pe=True)
-        self.out_txt = os.path.join(self.out_dir, self.name+'_fastqc_data.txt')
-        self.out_json = os.path.join(self.out_dir, self.name+'_fastqc_data.json')
-        self.out_png = os.path.join(self.out_dir, self.name+'_basecontent.png')
-        self.plot_json = os.path.join(self.out_dir, self.name+'_basecontent.json')
-
+        self.out_txt = os.path.join(
+            self.out_dir, self.name + "_fastqc_data.txt"
+        )
+        self.out_json = os.path.join(
+            self.out_dir, self.name + "_fastqc_data.json"
+        )
+        self.out_png = os.path.join(
+            self.out_dir, self.name + "_basecontent.png"
+        )
+        self.plot_json = os.path.join(
+            self.out_dir, self.name + "_basecontent.json"
+        )
 
     def get_df(self):
         if os.path.exists(self.out_txt):
             # for Per Base Content
-            m = 'Per base sequence content'
+            m = "Per base sequence content"
             qc = ReadFastQC(self.out_txt)
             qc.save_as(self.out_json)
             d1 = qc.get_module(m)
-            d2 = d1.get('table')
-            d2 = {k:list(map(eval, v)) for k,v in d2.items()}
+            d2 = d1.get("table")
+            d2 = {k: list(map(eval, v)) for k, v in d2.items()}
             df = pd.DataFrame(data=d2)
             # subset
             if isinstance(self.left_end, int):
                 if self.left_end > 0:
-                    df = df[df['Base'] <= self.left_end] # subset
+                    df = df[df["Base"] <= self.left_end]  # subset
             # save data.frame
             df.to_json(self.plot_json)
             return df
 
-
     def fa_to_fq(self, x):
         pass
-
 
     def is_fasta(self, x):
         pass
 
-
     def is_fastq(self, x):
         pass
 
-
     def is_tool(self, name):
         return which(name) is not None
-
 
     def run_falco(self):
         """
@@ -115,25 +117,26 @@ class BaseContentR1(object):
         ## expect output
         out_dir/fastqc_data.txt
         """
-        cmd = ' '.join([
-            which('falco'),
-            '--nogroup -skip-report -skip-summary --quiet',
-            '--outdir {}'.format(self.out_dir),
-            self.fq
-        ])
+        cmd = " ".join(
+            [
+                which("falco"),
+                "--nogroup -skip-report -skip-summary --quiet",
+                "--outdir {}".format(self.out_dir),
+                self.fq,
+            ]
+        )
         # out txt
         if os.path.exists(self.out_txt) and not self.overwrite:
-            print('file exists: {}'.format(self.out_txt))
+            print("file exists: {}".format(self.out_txt))
         else:
             try:
                 run_shell_cmd(cmd)
-                out_tmp = os.path.join(self.out_dir, 'fastqc_data.txt')
+                out_tmp = os.path.join(self.out_dir, "fastqc_data.txt")
                 if os.path.exists(out_tmp):
                     shutil.copy(out_tmp, self.out_txt)
                     os.remove(out_tmp)
             except:
-                print('Failed to run Falco')
-
+                print("Failed to run Falco")
 
     def run_fastqc(self):
         """
@@ -145,68 +148,74 @@ class BaseContentR1(object):
         ## expect output
         {filename}_fastqc/fastqc_data.txt
         """
-        cmd = ' '.join([
-            which('fastqc'),
-            '--nogroup --extract --quiet',
-            '--outdir {}'.format(self.out_dir),
-            self.fq
-        ])
+        cmd = " ".join(
+            [
+                which("fastqc"),
+                "--nogroup --extract --quiet",
+                "--outdir {}".format(self.out_dir),
+                self.fq,
+            ]
+        )
         # out txt
         if os.path.exists(self.out_txt) and not self.overwrite:
-            print('file exists: {}'.format(self.out_txt))
+            print("file exists: {}".format(self.out_txt))
         else:
             try:
                 run_shell_cmd(cmd)
-                tmp_dir = os.path.join(self.out_dir, self.name+'_fastqc')
-                out_tmp = os.path.join(tmp_dir, 'fastqc_data.txt')
+                tmp_dir = os.path.join(self.out_dir, self.name + "_fastqc")
+                out_tmp = os.path.join(tmp_dir, "fastqc_data.txt")
                 if os.path.exists(out_tmp):
                     shutil.copy(out_tmp, self.out_txt)
                     shutil.rmtree(tmp_dir)
                     # remove html and zip
-                    if os.path.exists(tmp_dir+'.html'):
-                        os.remove(tmp_dir+'.html')
-                    if os.path.exists(tmp_dir+'.zip'):
-                        os.remove(tmp_dir+'.zip')
+                    if os.path.exists(tmp_dir + ".html"):
+                        os.remove(tmp_dir + ".html")
+                    if os.path.exists(tmp_dir + ".zip"):
+                        os.remove(tmp_dir + ".zip")
             except:
-                print('Failed to run FastQC')
-
+                print("Failed to run FastQC")
 
     def pick_tool(self):
-        if self.is_tool('falco'):
+        if self.is_tool("falco"):
             out = self.run_falco
-        elif self.is_tool('fastqc'):
+        elif self.is_tool("fastqc"):
             out = self.run_fastqc
         else:
-            msg = '\n'.join(
-                '='*80,
-                'Required tool not found',
-                'Try to install either of falco or fastqc',
-                'see: https://github.com/smithlabcode/falco',
-                'or: https://github.com/s-andrews/FastQC',
-                'in brief:',
-                '$ conda install -c bioconda falco'
-                'or',
-                '$ conda install -c bioconda fastqc',
-                '='*80,
+            msg = "\n".join(
+                "=" * 80,
+                "Required tool not found",
+                "Try to install either of falco or fastqc",
+                "see: https://github.com/smithlabcode/falco",
+                "or: https://github.com/s-andrews/FastQC",
+                "in brief:",
+                "$ conda install -c bioconda falco" "or",
+                "$ conda install -c bioconda fastqc",
+                "=" * 80,
             )
             print(msg)
             out = None
         return out
 
-
     def plot(self):
         if os.path.exists(self.out_png) and not self.overwrite:
-            print('file exists: {}'.format(self.out_png))
+            print("file exists: {}".format(self.out_png))
             return None
         try:
             # data
             df = self.get_df()
             # fig
             fig = px.bar(
-                df, x='Base', y=['A', 'C', 'G', 'T'],
-                color_discrete_sequence=['#11dd11', '#0c0cde', '#414141', '#e12626'],
-                title='Per Base Content'
-                )
+                df,
+                x="Base",
+                y=["A", "C", "G", "T"],
+                color_discrete_sequence=[
+                    "#11dd11",
+                    "#0c0cde",
+                    "#414141",
+                    "#e12626",
+                ],
+                title="Per Base Content",
+            )
             fig.update_layout(
                 title="Per Base Content",
                 xaxis_title="Position in sequence",
@@ -215,15 +224,14 @@ class BaseContentR1(object):
                 font=dict(
                     family="Courier New, monospace",
                     size=12,
-                    color='#1B262C',
+                    color="#1B262C",
                     # color="RebeccaPurple"
-                )
+                ),
             )
             fig.write_image(self.out_png)
-            print('Save to file: {}'.format(self.out_png))
+            print("Save to file: {}".format(self.out_png))
         except:
-            print('Failed to plot: {}'.format(self.out_png))
-
+            print("Failed to plot: {}".format(self.out_png))
 
     def run(self):
         qc = self.pick_tool()
@@ -232,7 +240,7 @@ class BaseContentR1(object):
             self.plot()
         # remove
         if self.rm_tmp:
-            for i in [self.out_txt, self.out_json]: # , self.plot_json]:
+            for i in [self.out_txt, self.out_json]:  # , self.plot_json]:
                 if os.path.exists(i):
                     os.remove(i)
 
@@ -243,20 +251,18 @@ class BaseContent(object):
         # self.fq = fq
         self.init_args()
 
-
     def init_args(self):
         args = {
-            'fq': None,
-            'out_dir': None,
-            'left_end': 0,
-            'parallel_jobs': 1,
-            'overwrite': False,
-            'rm_tmp': False,
+            "fq": None,
+            "out_dir": None,
+            "left_end": 0,
+            "parallel_jobs": 1,
+            "overwrite": False,
+            "rm_tmp": False,
         }
         self = update_obj(self, args, force=False)
         self.out_dir = fix_out_dir(self.out_dir)
         self.init_fq()
-
 
     def init_fq(self):
         if isinstance(self.fq, str):
@@ -265,10 +271,9 @@ class BaseContent(object):
         if isinstance(self.fq, list):
             self.fq = [i for i in self.fq if self.is_fastq(i)]
 
-
     def is_fastq(self, x):
         if isinstance(x, str):
-            p = re.compile('.f(ast)?q(.gz)?$', flags=re.IGNORECASE)
+            p = re.compile(".f(ast)?q(.gz)?$", flags=re.IGNORECASE)
             return isinstance(p.search(x), re.Match)
         elif isinstance(x, list):
             # return [self.is_fastq(i) for i in x]
@@ -276,12 +281,10 @@ class BaseContent(object):
         else:
             return False
 
-
     def run_single_fx(self, i):
         args = self.__dict__.copy()
-        args.pop('fq', []) # remove fq from args
+        args.pop("fq", [])  # remove fq from args
         BaseContentR1(i, **args).run()
-
 
     def run(self):
         if len(self.fq) > 1 and self.parallel_jobs > 1:
@@ -294,21 +297,23 @@ class BaseContent(object):
 def base_content(**kwargs):
     # default args
     args = {
-        'fq': None,
-        'out_dir': None,
-        'left_end': 0,
-        'parallel_jobs': 1,
-        'overwrite': False,
-        'rm_tmp': False,
+        "fq": None,
+        "out_dir": None,
+        "left_end": 0,
+        "parallel_jobs": 1,
+        "overwrite": False,
+        "rm_tmp": False,
     }
     args.update(kwargs)
-    fq = args.pop('fq', [])
+    fq = args.pop("fq", [])
+
     # BEGIN: sub-func #
     def run_single_fx(i):
         BaseContent(fq=i, **args).run()
+
     # END: sub-func #
-    if len(fq) > 1 and args['parallel_jobs'] > 1:
-        with Pool(processes=args['parallel_jobs']) as pool:
+    if len(fq) > 1 and args["parallel_jobs"] > 1:
+        with Pool(processes=args["parallel_jobs"]) as pool:
             pool.map(run_single_fx, fq)
     else:
         # print(kwargs)
@@ -316,30 +321,60 @@ def base_content(**kwargs):
 
 
 def get_args():
-    example = '\n'.join([
-        'Examples:',
-        '1. check base-content for single file',
-        '$ python base_content.py -i fq1 -o out_dir',
-        '2. check base-content for left 10-nt',
-        '$ python base_content.py -i fq1 -o out_dir -l 10',
-    ])
+    example = "\n".join(
+        [
+            "Examples:",
+            "1. check base-content for single file",
+            "$ python base_content.py -i fq1 -o out_dir",
+            "2. check base-content for left 10-nt",
+            "$ python base_content.py -i fq1 -o out_dir -l 10",
+        ]
+    )
     parser = argparse.ArgumentParser(
-        prog='base_content',
-        description='Per base content for fastq file',
+        prog="base_content",
+        description="Per base content for fastq file",
         epilog=example,
-        formatter_class=argparse.RawTextHelpFormatter)
-    parser.add_argument('-i', '--fq', dest='fq', nargs='+', required=True,
-        help='FASTQ files')
-    parser.add_argument('-o', '--out-dir', dest='out_dir', required=False,
-        help='The directory to save output files')
-    parser.add_argument('-l', '--left-end', dest='left_end', type=int, default=0,
-        help='Plot for the left N-base, default: [0], for whole sequence')
-    parser.add_argument('-j', '--parallel-jobs', dest='parallel_jobs', type=int,
-        default=1, help='Run N-jobs in parallel, default: [1]')
-    parser.add_argument('-O', '--overwrite', action='store_true',
-        help='Overwrite the exists files')
-    parser.add_argument('-r', '--rm-tmp', dest='rm_tmp', action='store_true',
-        help='remove temp files')
+        formatter_class=argparse.RawTextHelpFormatter,
+    )
+    parser.add_argument(
+        "-i", "--fq", dest="fq", nargs="+", required=True, help="FASTQ files"
+    )
+    parser.add_argument(
+        "-o",
+        "--out-dir",
+        dest="out_dir",
+        required=False,
+        help="The directory to save output files",
+    )
+    parser.add_argument(
+        "-l",
+        "--left-end",
+        dest="left_end",
+        type=int,
+        default=0,
+        help="Plot for the left N-base, default: [0], for whole sequence",
+    )
+    parser.add_argument(
+        "-j",
+        "--parallel-jobs",
+        dest="parallel_jobs",
+        type=int,
+        default=1,
+        help="Run N-jobs in parallel, default: [1]",
+    )
+    parser.add_argument(
+        "-O",
+        "--overwrite",
+        action="store_true",
+        help="Overwrite the exists files",
+    )
+    parser.add_argument(
+        "-r",
+        "--rm-tmp",
+        dest="rm_tmp",
+        action="store_true",
+        help="remove temp files",
+    )
     return parser
 
 
@@ -348,7 +383,7 @@ def main():
     BaseContent(**args).run()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
 
 #

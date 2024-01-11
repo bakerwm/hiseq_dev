@@ -59,7 +59,7 @@ chr1    4490930 4497354 Sox17   255     -       protein_coding
 import os
 import sys
 import re
-import tabix # pytabix
+import tabix  # pytabix
 import logging
 from subprocess import Popen, PIPE
 from itertools import repeat
@@ -67,37 +67,38 @@ from multiprocessing import Pool
 
 
 logging.basicConfig(
-    format='[%(asctime)s %(levelname)s] %(message)s',
-    datefmt='%Y-%m-%d %H:%M:%S',
-    stream=sys.stdout)
+    format="[%(asctime)s %(levelname)s] %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S",
+    stream=sys.stdout,
+)
 log = logging.getLogger(__name__)
-log.setLevel('INFO')
+log.setLevel("INFO")
 
 
 class Tabix(object):
-    """    
+    """
     Example:
     >>> x = 'demo.bed.gz'
     >>> tbi = Tabix(x)
     """
-    def __init__(self, x, **kwargs):
-        self.x = x # bgzipped file, or openned bgzipped file
-        self.init_args()
 
+    def __init__(self, x, **kwargs):
+        self.x = x  # bgzipped file, or openned bgzipped file
+        self.init_args()
 
     def init_args(self):
         tag = False
         if isinstance(self.x, str):
             if not os.path.exists(self.x):
-                log.warning(f'x= file not exists, {self.x}')
-            tbi = self.x+'.tbi'
-            if self.x.endswith('.gz') and os.path.exists(tbi):
+                log.warning(f"x= file not exists, {self.x}")
+            tbi = self.x + ".tbi"
+            if self.x.endswith(".gz") and os.path.exists(tbi):
                 tag = True
             else:
                 x_name = os.path.splitext(self.x)[0]
-                log.warning(f'tabix file not detected, {tbi}')
+                log.warning(f"tabix file not detected, {tbi}")
                 log.warning(
-                '''
+                    """
                 # Prepare a tabix file with the following commands
                 # 1. sort the BED file
                 sort -k1,1 -k2,2n -o demo.bed demo.bed
@@ -105,12 +106,11 @@ class Tabix(object):
                 bgzip demo.bed
                 # 3. Create tabix
                 tabix -p bed demo.bed.gz
-                '''
+                """
                 )
         else:
-            log.error(f'invalid x=, expect str, got {type(self.x).__name__}')
+            log.error(f"invalid x=, expect str, got {type(self.x).__name__}")
         self.fh = self.open(self.x)
-
 
     def open(self, x):
         """
@@ -128,39 +128,36 @@ class Tabix(object):
             out = tabix.open(x)
         except:
             out = None
-            log.error(f'Could not open gzipped file: {x}')
+            log.error(f"Could not open gzipped file: {x}")
         return out
 
-
-    def format_region(self, region=None, chr=None, start=None, end=None):        
+    def format_region(self, region=None, chr=None, start=None, end=None):
         if self.is_valid_region(region):
             out = region
         elif isinstance(chr, str):
             if isinstance(start, int) and isinstance(end, int):
                 start, end = [abs(start), abs(end)]
                 if start > end:
-                    start, end = [end, start] # make sure start < end
-                out = f'{chr}:{start}-{end}'
+                    start, end = [end, start]  # make sure start < end
+                out = f"{chr}:{start}-{end}"
             else:
                 out = chr
         else:
             out = None
         return out if self.is_valid_region(out) else None
 
-
     def is_valid_region(self, region):
         """
-        Format query string as: chr:start-end for tabix 
+        Format query string as: chr:start-end for tabix
         1. chr1:1-100
         2. chr1
         """
-        p1 = re.compile('^(\w+):(\d+)-(\d+)$|^(\w+)$')
+        p1 = re.compile("^(\w+):(\d+)-(\d+)$|^(\w+)$")
         if isinstance(region, str):
             out = isinstance(p1.match(region), re.Match)
         else:
             out = False
         return out
-
 
     def list_chroms(self):
         """
@@ -168,19 +165,18 @@ class Tabix(object):
         see:
         tabix -l demo.bed.gz
         """
-        p = Popen(['tabix', '-l', self.x], stdout=PIPE)
+        p = Popen(["tabix", "-l", self.x], stdout=PIPE)
         return [i.decode().strip() for i in p.stdout]
-
 
     def fetch(self, region=None, chr=None, start=None, end=None):
         """
         Fetch records by chr:start-end from tabix indexed file
-        
+
         Parameters:
         fh (tabix.open) a tabix.open object
-        pos (str): position to extract, format: chr:start-end 
-        chr (str): chromosome name 
-        start (int): start 
+        pos (str): position to extract, format: chr:start-end
+        chr (str): chromosome name
+        start (int): start
         end (int): end
 
         Examples:
@@ -193,28 +189,26 @@ class Tabix(object):
         records
         """
         if isinstance(self.fh, tabix.open):
-            query = self.format_region(region, chr, start, end) # chr1:1-100, chr1
+            query = self.format_region(
+                region, chr, start, end
+            )  # chr1:1-100, chr1
             if isinstance(query, str):
                 try:
-                    out = self.fh.querys(query) # tabix.iter
+                    out = self.fh.querys(query)  # tabix.iter
                 except:
-                    out = None # show error ?
+                    out = None  # show error ?
                 return out
-
 
     def fetch2(self, region_list):
         for i in region_list:
             if self.is_valid_region(i):
-                yield self.fetch(i) # generator
-
+                yield self.fetch(i)  # generator
 
     def fetch_by_bed(self, bed):
         if isinstance(bed, str):
             if os.path.exists(bed):
                 with open(bed) as r:
                     for l in r:
-                        s = l.strip().split() # tab
-                        region = f's[0]:s[1]-s[2]'
+                        s = l.strip().split()  # tab
+                        region = f"s[0]:s[1]-s[2]"
                         yield self.fetch(region)
-
-
