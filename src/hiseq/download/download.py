@@ -106,6 +106,7 @@ class OSSinfo(object):
         oss://...
         tos://...
     # pre-defined config
+    'qgq': {'region': 'shanghai', 'endpoint': 'http://oss-cn-shanghai.aliyuncs.com'}
     'psndata': {'region': 'shanghai', 'endpoint': 'http://oss-cn-shanghai.aliyuncs.com'}
     'seekgene': {'region': 'beijing', 'endpoint': 'http://oss-cn-beijing.aliyuncs.com'}
     'skyseq': {'region': 'cn-shanghai', 'endpoint': 'https://tos-cn-shanghai.volces.com'}
@@ -133,6 +134,10 @@ class OSSinfo(object):
         oss_path: 'oss://seekgene-release/2307015_1010/release/'
         """
         cfg = {
+            "qgq": {
+                "region": "shanghai",
+                "endpoint": "http://oss-cn-shanghai.aliyuncs.com",
+            },
             "psndata": {
                 "region": "shanghai",
                 "endpoint": "http://oss-cn-shanghai.aliyuncs.com",
